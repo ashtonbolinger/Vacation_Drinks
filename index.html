@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vacation Ninja SLUSHi Menu</title>
+<style>
+  :root{
+    --ocean:#087f8c;
+    --deep:#075985;
+    --sky:#dff6fb;
+    --sand:#fff4d6;
+    --coral:#f97360;
+    --palm:#2f855a;
+    --ink:#17324d;
+    --white:#ffffff;
+    --muted:#5f7184;
+    --line:#d9e6ea;
+    --shadow:0 10px 30px rgba(14,72,88,.12);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color:var(--ink);
+    background:linear-gradient(180deg,var(--sky) 0 26%,var(--sand) 26% 100%);
+    min-height:100vh;
+  }
+  header{
+    padding:32px 20px 26px;
+    text-align:center;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(255,255,255,.8), transparent 22%),
+      linear-gradient(135deg,#b9eef5,#eafcff);
+    border-bottom:1px solid rgba(8,127,140,.18);
+  }
+  header h1{margin:0;font-size:clamp(2rem,6vw,3.7rem);line-height:1.02}
+  header p{max-width:760px;margin:12px auto 0;color:var(--muted);font-size:1.05rem}
+  .shell{max-width:1160px;margin:0 auto;padding:22px}
+  .toolbar{
+    display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:20px;
+  }
+  button{
+    border:0;border-radius:999px;padding:11px 17px;font-weight:750;cursor:pointer;
+    background:var(--white);color:var(--deep);box-shadow:0 4px 14px rgba(0,0,0,.08);
+    transition:transform .15s ease,box-shadow .15s ease;
+  }
+  button:hover{transform:translateY(-1px)}
+  button:focus-visible{outline:3px solid #fbbf24;outline-offset:3px}
+  button.active,.primary{background:var(--ocean);color:white}
+  .secondary{background:var(--coral);color:white}
+  .stats{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:22px;
+  }
+  .stat{background:rgba(255,255,255,.9);padding:16px;border-radius:18px;box-shadow:var(--shadow)}
+  .stat strong{display:block;font-size:1.6rem;color:var(--ocean)}
+  .stat span{color:var(--muted);font-size:.9rem}
+  .grid{
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;
+  }
+  .card{
+    background:rgba(255,255,255,.96);border:1px solid rgba(8,127,140,.15);
+    border-radius:22px;padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px;
+  }
+  .card h3{margin:0;font-size:1.15rem}
+  .meta{display:flex;flex-wrap:wrap;gap:7px}
+  .pill{
+    display:inline-flex;align-items:center;border-radius:999px;padding:5px 9px;
+    background:#eef8fa;color:var(--deep);font-size:.78rem;font-weight:700
+  }
+  .votes{background:#fff0ec;color:#a73f31}
+  .ingredients{color:var(--muted);font-size:.92rem;line-height:1.45}
+  .card button{margin-top:auto;width:100%;border-radius:13px;background:var(--deep);color:#fff}
+  .hidden{display:none!important}
+  .overlay{
+    position:fixed;inset:0;background:rgba(7,50,71,.62);display:flex;align-items:flex-start;
+    justify-content:center;padding:28px 16px;z-index:20;overflow:auto;
+  }
+  .modal{
+    width:min(760px,100%);background:white;border-radius:24px;padding:24px;box-shadow:0 30px 70px rgba(0,0,0,.26)
+  }
+  .modal-head{display:flex;gap:12px;justify-content:space-between;align-items:start}
+  .modal h2{margin:0}
+  .close{padding:8px 12px;background:#edf3f5;color:var(--ink)}
+  .recipe-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:18px}
+  .recipe-grid h4{margin:0 0 8px;color:var(--ocean)}
+  ul,ol{padding-left:20px}
+  li{margin:6px 0}
+  .note{padding:12px;border-radius:14px;background:#fff8e6;border:1px solid #f4d58a;color:#6b4a08}
+  .grocery-list{columns:2;column-gap:30px}
+  .grocery-group{break-inside:avoid;margin-bottom:18px}
+  .grocery-group h3{margin:0 0 8px;color:var(--ocean)}
+  .batch-toggle{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:14px 0 20px}
+  .batch-toggle button{box-shadow:none;border:1px solid var(--line)}
+  .batch-toggle button.active{background:var(--ocean);color:white;border-color:var(--ocean)}
+  .modal-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+  .modal-actions button{border-radius:12px}
+  .editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  .editor-grid label{display:flex;flex-direction:column;gap:6px;font-weight:750;color:var(--deep)}
+  .editor-grid .wide{grid-column:1/-1}
+  .editor-grid input,.editor-grid select,.editor-grid textarea{
+    width:100%;border:1px solid var(--line);border-radius:11px;padding:10px 12px;
+    font:inherit;color:var(--ink);background:white
+  }
+  .editor-grid textarea{min-height:130px;resize:vertical;line-height:1.4}
+  .edit-warning{margin:12px 0;padding:11px 12px;border-radius:12px;background:#fff0ec;color:#8a352b}
+  .recipe-picker{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 18px}
+  .check-row{display:flex;align-items:flex-start;gap:9px;padding:9px 10px;border:1px solid var(--line);border-radius:11px;background:#fff}
+  .check-row input{margin-top:3px;accent-color:var(--ocean);width:17px;height:17px;flex:0 0 auto}
+  .check-row input:checked+span{text-decoration:line-through;color:var(--muted)}
+  .recipe-choice input:checked+span{text-decoration:none;color:var(--deep);font-weight:750}
+  .selector-actions{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+  .selector-actions button{box-shadow:none;border:1px solid var(--line);border-radius:11px;padding:8px 12px}
+  .shopping-progress{font-weight:750;color:var(--ocean);margin:12px 0}
+  .selected-grocery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .grocery-recipe{border:1px solid var(--line);border-radius:15px;padding:13px;background:#fafdfe}
+  .grocery-recipe h3{margin:0 0 10px;color:var(--ocean);font-size:1rem}
+  .grocery-recipe .check-row{margin-top:7px}
+  .grocery-category-card{border:1px solid rgba(8,127,140,.2);border-radius:18px;padding:15px;background:#fafdfe;margin:16px 0}
+  .grocery-category-head{display:flex;justify-content:space-between;gap:14px;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:9px;margin-bottom:10px}
+  .grocery-category-head h3{margin:0;color:var(--ocean)}
+  .grocery-item-card{border:1px solid var(--line);border-radius:14px;padding:13px;margin-top:10px;background:white}
+  .grocery-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .grocery-item-head h4{margin:0;color:var(--deep);font-size:1rem}
+  .grocery-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 14px;margin:10px 0;font-size:.9rem}
+  .alternative{font-size:.88rem;color:var(--muted);line-height:1.4;margin-top:8px}
+  .include-control{font-size:.82rem;color:var(--muted);white-space:nowrap}
+  .grocery-tools{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+  .grocery-tools button{border-radius:11px;box-shadow:none;border:1px solid var(--line)}
+  .grocery-summary-card{border:2px solid rgba(8,127,140,.25);border-radius:18px;padding:15px;background:#eef8fa;margin:16px 0}
+  .grocery-summary-card h3{margin:0 0 6px;color:var(--ocean)}
+  .grocery-summary-card textarea{width:100%;min-height:280px;resize:vertical;border:1px solid var(--line);border-radius:12px;padding:12px;font:500 .92rem/1.5 ui-monospace,Consolas,monospace;color:var(--ink);background:white;white-space:pre;overflow-x:auto}
+  .copy-status{color:var(--palm);font-weight:750;margin-left:8px}
+  footer{text-align:center;color:var(--muted);padding:28px}
+  @media(max-width:850px){
+    .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media(max-width:560px){
+    .grid{grid-template-columns:1fr}
+    .recipe-grid{grid-template-columns:1fr}
+    .grocery-list{columns:1}
+    .shell{padding:14px}
+    .editor-grid{grid-template-columns:1fr}
+    .editor-grid .wide{grid-column:auto}
+    .recipe-picker,.selected-grocery{grid-template-columns:1fr}
+    .grocery-metrics{grid-template-columns:1fr}
+  }
+  @media print{
+    body{background:white}
+    header,.toolbar,.stats,.grid,footer{display:none!important}
+    .overlay{position:static;background:white;padding:0}
+    .modal{box-shadow:none;width:100%;padding:0}
+    .close{display:none}
+    .batch-toggle,.recipe-picker,.selector-actions,.grocery-tools,.include-control{display:none!important}
+    .grocery-item-card,.grocery-category-card{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div style="font-size:2rem">🏖️🍹🌴</div>
+  <h1>Vacation Ninja SLUSHi Menu</h1>
+  <p>Preference-first menu optimized for ingredient sharing. The machine has an 88-ounce vessel with a 64-ounce MAX FILL line; most recipes make a 64-ounce batch, while smaller specialty recipes show their own yield.</p>
+</header>
+
+<main class="shell">
+  <div class="toolbar" aria-label="Recipe categories">
+    <button class="active filter" data-filter="all">All Recipes</button>
+    <button class="filter" data-filter="coffee">☕ Coffee</button>
+    <button class="filter" data-filter="slush">🍓 Fruit Slush</button>
+    <button class="filter" data-filter="shake">🍦 Milkshake</button>
+    <button class="filter" data-filter="cocktail">🍹 Cocktails</button>
+    <button id="groceryBtn" class="secondary">🛒 Full Grocery List</button>
+    <button id="resetEditsBtn" type="button">Reset Saved Edits</button>
+  </div>
+
+  <section class="stats">
+    <div class="stat"><strong>21</strong><span>optimized recipes</span></div>
+    <div class="stat"><strong>Up to 64 oz</strong><span>recipe batch sizes</span></div>
+  </section>
+
+  <section id="recipeGrid" class="grid"></section>
+</main>
+
+<footer>Built for Sunday through Friday vacation service. Each recipe shows its estimated batch yield. Pre-chill every base and never exceed the machine’s 64-ounce max-fill line.</footer>
+
+<div id="overlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <span id="modalCategory" class="pill"></span>
+        <h2 id="modalTitle"></h2>
+      </div>
+      <button id="closeBtn" class="close">Close</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const defaultRecipes = [
+  {
+    name:"Mocha Frappé", category:"coffee", votes:3, overlap:"Coffee + chocolate + milk",
+    ingredients:["42 oz chilled cold brew","16 oz chocolate milk","4 oz chocolate syrup","1 oz whole milk","1 oz heavy cream"],
+    steps:["Whisk all ingredients together until uniform.","Pour into the machine without ice.","Select the frappé setting and adjust thickness as needed."],
+    note:"Highest-voted coffee and a strong ingredient-sharing choice."
+  },
+  {
+    name:"Peanut Butter Mocha", category:"coffee", votes:2, overlap:"Shares mocha base",
+    ingredients:["40 oz chilled cold brew","16 oz chocolate milk","4 oz chocolate syrup","4 oz smooth peanut butter blend (whisk smooth peanut butter with warm milk or water to 4 oz total, then cool completely)"],
+    steps:["Blend the peanut butter with a small amount of warm milk or water until completely smooth, whisk in the chocolate syrup, then cool completely.","Combine with the remaining chilled ingredients. Do not put thick, unmixed peanut butter into the machine.","Run on the frappé setting."],
+    note:"Smooth peanut butter replaces specialty peanut butter syrup without materially changing the chocolate-peanut flavor."
+  },
+  {
+    name:"Salted Caramel Latte", category:"coffee", votes:2, overlap:"Coffee + milk",
+    ingredients:["42 oz chilled cold brew","16 oz whole milk","6 oz caramel syrup","1/4 teaspoon fine salt"],
+    steps:["Whisk thoroughly until the salt dissolves.","Taste and add a little more caramel if desired.","Run on the frappé setting."],
+    note:"Caramel is the only specialty ingredient."
+  },
+  {
+    name:"S’mores Frappé", category:"coffee", votes:2, overlap:"Coffee + chocolate + marshmallow",
+    ingredients:["38 oz chilled cold brew","16 oz chocolate milk","4 oz chocolate syrup","6 oz cooled marshmallow blend (marshmallow crème dissolved in warm milk, then chilled)"],
+    toppings:["Crushed graham crackers, added only after dispensing"],
+    steps:["Blend marshmallow crème into a small amount of warm milk until completely smooth, then cool completely.","Whisk with the remaining chilled liquid ingredients and run on the frappé setting.","Top individual servings with graham crumbs only after dispensing."],
+    note:"Marshmallow crème replaces specialty toasted-marshmallow syrup; bottled syrup remains a convenience option."
+  },
+  {
+    name:"Nutella Frappé", category:"coffee", votes:2, overlap:"Coffee + Nutella + cream", yield:"About 3 servings (8 oz each)", batch:"About 24 oz",
+    ingredients:["500 mL whole milk (about 2 cups or 17 oz)","4 heaping tablespoons Nutella, warmed slightly so it dissolves smoothly","2 shots cooled espresso or 1/2 cup (4 oz) cooled strong brewed coffee","1/4 cup (2 oz) heavy cream"],
+    toppings:["Whipped cream and an extra Nutella drizzle, added only after dispensing (optional)"],
+    steps:["In a separate bowl, whisk the slightly warmed Nutella, milk, cooled coffee, and heavy cream until completely smooth and well combined.","Pour the chilled mixture directly into the Ninja SLUSHi chamber, keeping it below the max-fill line.","Select the Frappé preset. If a thicker result is preferred, use the Milkshake preset or increase the temperature level.","Dispense into glasses and top with whipped cream and an extra Nutella drizzle."],
+    note:"Real Nutella and cream produce a richer, more authentic hazelnut-chocolate frappé. Make sure the Nutella is completely dissolved before it enters the machine."
+  },
+  {
+    name:"Peach Mango Slush", category:"slush", votes:4, overlap:"Peach hub",
+    ingredients:["32 oz peach nectar","30 oz mango nectar or mango juice","2 oz lemon juice"],
+    steps:["Stir all ingredients together and chill completely.","Pour into the machine and select slush.","Adjust with a little additional nectar if needed."],
+    note:"Tied for the highest vote total in its category."
+  },
+  {
+    name:"Arnold Palmer Slush", category:"slush", votes:4, overlap:"Lemonade + tea",
+    ingredients:["32 oz sweet tea","32 oz lemonade"],
+    steps:["Combine chilled tea and lemonade.","Run on the slush setting.","Serve with lemon wedges if desired."],
+    note:"Very inexpensive and uses lemonade needed elsewhere."
+  },
+  {
+    name:"Orange Creamsicle Slush", category:"slush", votes:3, overlap:"Orange + vanilla dairy",
+    ingredients:["50 oz orange juice","14 oz vanilla coffee creamer"],
+    steps:["Whisk until completely blended.","Run on the slush setting.","Add a splash of orange juice if the mixture becomes too thick."],
+    note:"Shares orange juice and vanilla dairy with the shake version."
+  },
+  {
+    name:"Strawberry Lemonade", category:"slush", votes:2, overlap:"Lemonade + strawberries",
+    ingredients:["46 oz lemonade","18 oz strawberry purée or strawberry nectar"],
+    steps:["Combine and chill completely.","Run on the slush setting.","Serve with sliced strawberries if available."],
+    note:"Uses lemonade already purchased for Arnold Palmers."
+  },
+  {
+    name:"Tropical Punch Slush", category:"slush", votes:3, overlap:"Tropical punch + pineapple + lime",
+    ingredients:["48 oz tropical fruit punch","12 oz pineapple juice","4 oz lime juice"],
+    steps:["Combine all ingredients and chill thoroughly.","Run on the slush setting.","Taste after freezing and add a small splash of punch if a thinner texture is desired."],
+    note:"A bright, family-friendly slush that shares pineapple and lime ingredients with the cocktail menu."
+  },
+  {
+    name:"Mango Passionfruit Slush", category:"slush", votes:3, overlap:"Mango + passionfruit",
+    ingredients:["36 oz mango nectar","26 oz passionfruit juice cocktail","2 oz lime juice"],
+    steps:["Stir the chilled juices together.","Run on the slush setting.","Adjust with a little mango nectar if a sweeter finish is desired."],
+    note:"Uses nectar and sweetened juice cocktail so the base has enough sugar to freeze properly."
+  },
+  {
+    name:"Chocolate Marshmallow Shake", category:"shake", votes:3, overlap:"Chocolate + marshmallow",
+    ingredients:["42 oz chocolate milk","16 oz whole milk","6 oz cooled marshmallow blend (marshmallow crème dissolved in warm milk, then chilled)"],
+    steps:["Blend marshmallow crème into a small amount of warm milk until completely smooth, then cool completely.","Whisk with the remaining chilled ingredients.","Run on the milkshake setting."],
+    note:"Top write-in and excellent overlap with S’mores Frappé."
+  },
+  {
+    name:"Chocolate Chip Cookie Dough Shake", category:"shake", votes:3, overlap:"Chocolate dairy base",
+    ingredients:["40 oz chocolate milk","20 oz whole milk","4 oz chocolate syrup"],
+    toppings:["Edible cookie-dough pieces, stirred into individual servings only after dispensing"],
+    steps:["Combine the liquids and run on the milkshake setting.","Stir small cookie-dough pieces into individual servings after dispensing.","Do not put large chunks through the machine."],
+    note:"Use commercially prepared edible cookie dough."
+  },
+  {
+    name:"Classic Chocolate Shake", category:"shake", votes:3, overlap:"Core chocolate base",
+    ingredients:["44 oz chocolate milk","16 oz whole milk","4 oz chocolate syrup"],
+    steps:["Whisk together and chill thoroughly.","Run on the milkshake setting.","Top with whipped cream if desired."],
+    note:"The simplest and most grocery-efficient shake."
+  },
+  {
+    name:"Orange Creamsicle Shake", category:"shake", votes:3, overlap:"Orange + vanilla dairy",
+    ingredients:["42 oz orange juice","18 oz vanilla coffee creamer","4 oz whole milk"],
+    steps:["Whisk together until uniform.","Run on the milkshake setting.","Serve immediately."],
+    note:"Pairs directly with the Orange Creamsicle Slush."
+  },
+  {
+    name:"Brownie Batter Shake", category:"shake", votes:3, overlap:"Chocolate dairy base",
+    ingredients:["48 oz whole milk","8 oz heavy cream","1 packet chocolate mousse mix or instant chocolate pudding mix (about 3.9 oz)","1/2 cup granulated sugar, adding up to 1 cup total for a sweeter batter flavor","Up to 8 oz additional whole milk, added after mixing to bring the finished base to 64 oz"],
+    toppings:["Whipped cream and crumbled brownies or Cosmic Brownies, added only after dispensing (optional)"],
+    steps:["Whisk 48 oz milk, the heavy cream, pudding or mousse mix, and 1/2 cup sugar until completely smooth and no dry pockets remain.","Taste and add more sugar only if desired, then add enough milk to bring the fully mixed base to exactly 64 oz. Chill thoroughly.","Run on the milkshake setting. Add whipped cream and brownie crumbles only after dispensing."],
+    note:"Pudding or mousse mix creates a thick, fudgy brownie-batter texture. Measuring the finished base to 64 oz prevents the dissolved dry ingredients from pushing the batch over the max-fill line."
+  },
+  {
+    name:"Classic Margarita", category:"cocktail", votes:4, overlap:"Lime + citrus",
+    ingredients:["40 oz margarita mix","10 oz tequila","14 oz cold water"],
+    steps:["Mix and chill thoroughly.","Run on the spiked-slush setting.","If it remains too loose, add 4 oz water, wait 30 minutes, and reassess."],
+    note:"Keep the total alcohol level within the Ninja machine’s published limit."
+  },
+  {
+    name:"Peach Bellini", category:"cocktail", votes:4, overlap:"Peach hub",
+    ingredients:["31 oz peach nectar or purée","25 oz chilled prosecco","8 oz cold water"],
+    steps:["Stir gently to preserve some carbonation.","Run on the spiked-slush setting.","Serve promptly."],
+    note:"Shares peach ingredients with Peach Mango Slush."
+  },
+  {
+    name:"Whiskey Sour Slush", category:"cocktail", votes:3, overlap:"Lemon hub",
+    ingredients:["34 oz lemonade","10 oz whiskey","14 oz cold water","6 oz simple syrup"],
+    steps:["Combine and chill thoroughly.","Run on the spiked-slush setting.","Taste before serving and adjust sweetness with simple syrup."],
+    note:"Best-performing write-in and shares lemonade with two other drinks."
+  },
+  {
+    name:"Kentucky Mule Slush", category:"cocktail", votes:3, overlap:"Bourbon + ginger + lime",
+    ingredients:["42 oz ginger beer","10 oz bourbon or whiskey","10 oz cold water","2 oz lime juice"],
+    steps:["Stir the ginger beer gently until most of the carbonation subsides.","Combine with the remaining chilled ingredients and run on the spiked-slush setting.","Serve with lime wedges and fresh mint if desired."],
+    note:"Bourbon turns the classic mule into a Kentucky Mule while staying within Ninja’s hard-spirit guideline for a 64-ounce batch."
+  },
+  {
+    name:"Piña Colada", category:"cocktail", votes:4, overlap:"Pineapple + tropical",
+    ingredients:["30 oz pineapple juice","16 oz cream of coconut","10 oz white rum","8 oz cold water"],
+    steps:["Whisk the cream of coconut with a portion of the pineapple juice until smooth.","Add the remaining chilled ingredients and run on the spiked-slush setting.","If the mixture is too loose, add 4 oz water, wait 30 minutes, and reassess."],
+    note:"The rum quantity stays within Ninja’s hard-spirit guideline for a 64-ounce batch."
+  }
+];
+
+const RECIPE_STORAGE_KEY="vacationSlushiRecipeEditsV1";
+let recipeOverrides={};
+try{recipeOverrides=JSON.parse(localStorage.getItem(RECIPE_STORAGE_KEY)||"{}")||{}}catch(e){recipeOverrides={}}
+let recipes=[];
+function refreshRecipes(){
+  recipes=defaultRecipes.map((r,index)=>({...r,...(recipeOverrides[index]||{}),_index:index}));
+  document.getElementById("resetEditsBtn").disabled=Object.keys(recipeOverrides).length===0;
+}
+function persistRecipeOverrides(){
+  localStorage.setItem(RECIPE_STORAGE_KEY,JSON.stringify(recipeOverrides));
+  refreshRecipes();
+}
+const GROCERY_SELECTION_KEY="vacationSlushiSelectedRecipesV1";
+const GROCERY_CHECKS_KEY="vacationSlushiCheckedItemsV1";
+let selectedRecipeIndexes=new Set(defaultRecipes.map((_,index)=>index));
+let checkedGroceryItems={};
+try{
+  const savedSelection=JSON.parse(localStorage.getItem(GROCERY_SELECTION_KEY)||"null");
+  if(Array.isArray(savedSelection))selectedRecipeIndexes=new Set(savedSelection.filter(index=>Number.isInteger(index)&&defaultRecipes[index]));
+  checkedGroceryItems=JSON.parse(localStorage.getItem(GROCERY_CHECKS_KEY)||"{}")||{};
+}catch(e){checkedGroceryItems={}}
+function persistGroceryState(){
+  localStorage.setItem(GROCERY_SELECTION_KEY,JSON.stringify([...selectedRecipeIndexes]));
+  localStorage.setItem(GROCERY_CHECKS_KEY,JSON.stringify(checkedGroceryItems));
+}
+function clearGroceryChecksForRecipe(index){
+  Object.keys(checkedGroceryItems).forEach(key=>{
+    if(key.split(":")[1]===String(index))delete checkedGroceryItems[key];
+  });
+  persistGroceryState();
+}
+const requiredForItem=(item,multiplier)=>{
+  const quantities=Object.entries(item.recipes).filter(([index])=>selectedRecipeIndexes.has(Number(index))).map(([,amount])=>Number(amount));
+  if(!quantities.length)return 0;
+  return (item.combine==="max"?Math.max(...quantities):quantities.reduce((sum,value)=>sum+value,0))*multiplier;
+};
+
+const groceryCategories=[
+  "Coffee and dairy","Juices and mixers","Flavorings and mix-ins","Alcohol",
+  "Recommended garnishes","Optional presentation upgrades","Pantry items"
+];
+const groceryCatalog=[
+  {id:"cold_brew",name:"Cold brew coffee",category:"Coffee and dairy",recipes:{0:42,1:40,2:42,3:38,4:4},unit:"oz",packageAmount:256,packageLabel:"2-gallon homemade batch",requiredLabel:"liquid coffee",alternative:"Bottled option: 59 oz bottles. Homemade ratio: combine 1 lb coarse-ground coffee with 1 gallon cold water, steep 12–18 hours, strain, then dilute concentrate to taste and chill." ,convenience:{packageAmount:59,packageLabel:"59 oz bottle"}},
+  {id:"chocolate_milk",name:"Chocolate milk",category:"Coffee and dairy",recipes:{0:16,1:16,3:16,11:42,12:40,13:44},unit:"oz",packageAmount:128,packageLabel:"1-gallon jug",alternative:"Store-brand gallon jugs or multiple smaller containers are interchangeable. Keep separate from whole milk because the recipes use them differently."},
+  {id:"whole_milk",name:"Whole milk",category:"Coffee and dairy",recipes:{0:1,1:2,2:16,3:5,4:17,11:21,12:20,13:16,14:4,15:56},unit:"oz",packageAmount:128,packageLabel:"1-gallon jug",alternative:"Use a gallon or an equivalent combination of smaller containers. Whole milk is also used to dissolve peanut butter and marshmallow crème."},
+  {id:"heavy_cream",name:"Heavy whipping cream",category:"Coffee and dairy",recipes:{0:1,4:2,15:8},unit:"oz",packageAmount:16,packageLabel:"1-pint carton",alternative:"Use equal parts whole milk and heavy cream wherever half-and-half was previously listed; no separate half-and-half purchase is needed."},
+  {id:"vanilla_creamer",name:"Vanilla coffee creamer",category:"Coffee and dairy",recipes:{7:14,14:18},unit:"oz",packageAmount:32,packageLabel:"32 oz bottle",alternative:"Store-brand vanilla creamer is fine. Two 32 oz bottles may substitute for a 64 oz bottle in 2× mode."},
+
+  {id:"lemonade",name:"Lemonade",category:"Juices and mixers",recipes:{6:32,8:46,18:34},unit:"oz",packageAmount:128,packageLabel:"1-gallon jug",alternative:"A gallon jug or an equivalent combination of smaller lemonade bottles will work."},
+  {id:"sweet_tea",name:"Sweet tea",category:"Juices and mixers",recipes:{6:32},unit:"oz",packageAmount:64,packageLabel:"half-gallon jug",alternative:"Brew and sweeten tea at home if preferred; chill completely."},
+  {id:"orange_juice",name:"Orange juice",category:"Juices and mixers",recipes:{7:50,14:42},unit:"oz",packageAmount:52,packageLabel:"52 oz bottle",alternative:"Use store-brand refrigerated or shelf-stable orange juice."},
+  {id:"peach",name:"Peach nectar or smooth purée",category:"Juices and mixers",recipes:{5:32,17:31},unit:"oz",packageAmount:32,packageLabel:"32 oz container",alternative:"Interchangeable options: peach nectar, peach purée, or canned peaches blended completely smooth with their juice. Strain homemade purée; no chunks may enter the machine."},
+  {id:"mango",name:"Mango nectar or juice",category:"Juices and mixers",recipes:{5:30,10:36},unit:"oz",packageAmount:32,packageLabel:"32 oz container",alternative:"Mango nectar, mango juice, or frozen mango blended smooth with juice and strained. Favor one shared product for both mango recipes."},
+  {id:"strawberry",name:"Strawberry nectar or smooth purée",category:"Juices and mixers",recipes:{8:18},unit:"oz",packageAmount:32,packageLabel:"32 oz container",alternative:"Blend frozen strawberries with part of the lemonade, then strain out seeds and pulp. Never put chunky fruit or seeds into the machine."},
+  {id:"tropical_punch",name:"Tropical fruit punch",category:"Juices and mixers",recipes:{9:48},unit:"oz",packageAmount:64,packageLabel:"64 oz bottle",alternative:"Any smooth, sweetened tropical fruit punch is appropriate."},
+  {id:"pineapple_juice",name:"Pineapple juice",category:"Juices and mixers",recipes:{9:12,20:30},unit:"oz",packageAmount:46,packageLabel:"46 oz can or bottle",alternative:"One 46 oz container supplies both tropical recipes with little waste."},
+  {id:"passionfruit",name:"Passionfruit juice cocktail",category:"Juices and mixers",recipes:{10:26},unit:"oz",packageAmount:32,packageLabel:"32 oz container",alternative:"A sweetened juice cocktail is easier to freeze than unsweetened passionfruit concentrate."},
+  {id:"margarita_mix",name:"Margarita mix",category:"Juices and mixers",recipes:{16:40},unit:"oz",packageAmount:64,packageLabel:"64 oz bottle",alternative:"Store-brand mix is acceptable; keep the sugar needed for freezing."},
+  {id:"lemon_juice",name:"Lemon juice",category:"Juices and mixers",recipes:{5:2},unit:"oz",packageAmount:8,packageLabel:"8 oz bottle",alternative:"Instead, use about 4–6 fresh lemons for juice plus garnishes. Choose bottled or fresh; do not buy both unless garnishes are wanted."},
+  {id:"lime_juice",name:"Lime juice",category:"Juices and mixers",recipes:{9:4,10:2,19:2},unit:"oz",packageAmount:15,packageLabel:"15 oz bottle",alternative:"A 2 lb bag of fresh limes can generally supply about 8 oz juice plus wedges. Choose fresh or bottled to avoid duplication."},
+  {id:"ginger_beer",name:"Ginger beer",category:"Juices and mixers",recipes:{19:42},unit:"oz",packageAmount:12,packageLabel:"12 oz bottle",alternative:"Least-waste choices include four 12 oz bottles, six 7.5 oz cans, or one larger resealable bottle. Buy at least 42 oz; resealable containers reduce waste."},
+  {id:"cream_coconut",name:"Cream of coconut",category:"Juices and mixers",recipes:{20:16},unit:"oz",packageAmount:21,packageLabel:"21 oz bottle or can",alternative:"Cream of coconut is sweetened and concentrated. Coconut milk is thinner and usually unsweetened; do not substitute it one-for-one. Coconut cream works only with an appropriate sweetener adjustment."},
+
+  {id:"chocolate_syrup",name:"Chocolate syrup",category:"Flavorings and mix-ins",recipes:{0:4,1:4,3:4,12:4,13:4},unit:"oz",packageAmount:24,packageLabel:"24 oz bottle",alternative:"Use this same bottle for recipes, glass drizzle, and garnish—do not buy separate chocolate drizzle."},
+  {id:"caramel_syrup",name:"Caramel syrup",category:"Flavorings and mix-ins",recipes:{2:6},unit:"oz",packageAmount:12,packageLabel:"12 oz bottle",alternative:"A store-brand ice-cream caramel syrup is suitable."},
+  {id:"peanut_butter",name:"Smooth peanut butter",category:"Flavorings and mix-ins",recipes:{1:1},unit:"oz",packageAmount:16,packageLabel:"16 oz jar",alternative:"Blend with a little warm milk, cream, or water and chocolate syrup until completely smooth; cool before adding. Convenience alternative: peanut butter syrup.",convenience:{packageAmount:12,packageLabel:"12 oz peanut butter syrup"}},
+  {id:"marshmallow_creme",name:"Marshmallow crème",category:"Flavorings and mix-ins",recipes:{3:1,11:1},unit:"oz",packageAmount:7,packageLabel:"7 oz jar",alternative:"Blend into warm milk and cool. Alternatives: vanilla syrup plus crème, or regular marshmallows melted into warm milk and cooled. Bottled toasted-marshmallow syrup is optional convenience.",convenience:{packageAmount:12,packageLabel:"12 oz toasted-marshmallow syrup"}},
+  {id:"nutella",name:"Chocolate-hazelnut spread",category:"Flavorings and mix-ins",recipes:{4:3},unit:"oz",packageAmount:13,packageLabel:"13 oz jar",alternative:"Hazelnut syrup is optional because little is needed. Alternatives: hazelnut creamer, slightly more chocolate or caramel syrup, or spread fully dissolved in warm milk and cooled."},
+  {id:"pudding_mix",name:"Chocolate pudding or mousse mix",category:"Flavorings and mix-ins",recipes:{15:1},unit:"packet",packageAmount:1,packageLabel:"small 3.9 oz packet",alternative:"Keep one packet for texture. Alternative: cocoa powder plus granulated sugar and heavy cream or whole milk. Dissolve every powdered ingredient completely before chilling and adding."},
+  {id:"simple_syrup",name:"Simple syrup",category:"Flavorings and mix-ins",recipes:{18:6},unit:"oz",packageAmount:16,packageLabel:"16 oz homemade batch",alternative:"Preferred: combine 1 cup granulated sugar with 1 cup water, heat or stir until dissolved, and cool completely. Convenience alternative: bottled syrup.",convenience:{packageAmount:12,packageLabel:"12 oz bottle"}},
+
+  {id:"tequila",name:"Tequila",category:"Alcohol",recipes:{16:10},unit:"oz",packageAmount:25.4,packageLabel:"750 mL bottle",alternative:"Do not increase alcohol without validating freeze performance; excess alcohol can prevent freezing."},
+  {id:"prosecco",name:"Prosecco",category:"Alcohol",recipes:{17:25},unit:"oz",packageAmount:25.4,packageLabel:"750 mL bottle",alternative:"Chill completely. Excess alcohol can prevent freezing."},
+  {id:"bourbon",name:"Bourbon or whiskey",category:"Alcohol",recipes:{18:10,19:10},unit:"oz",packageAmount:25.4,packageLabel:"750 mL bottle",alternative:"One bottle covers one batch each of the Whiskey Sour and Kentucky Mule. Preserve dilution; excess alcohol can prevent freezing."},
+  {id:"rum",name:"White rum",category:"Alcohol",recipes:{20:10},unit:"oz",packageAmount:25.4,packageLabel:"750 mL bottle",alternative:"Do not increase the rum quantity; excess alcohol can prevent freezing."},
+
+  {id:"graham",name:"Graham crackers",category:"Recommended garnishes",recipes:{3:1},unit:"box",packageAmount:1,packageLabel:"1 box",alternative:"Used after dispensing for the S’mores Frappé; omit only if the s’mores finish is not important."},
+  {id:"cookie_dough",name:"Edible cookie dough",category:"Recommended garnishes",recipes:{12:1},unit:"package",packageAmount:1,packageLabel:"small refrigerated package",alternative:"Use commercially prepared edible dough and stir into cups only after dispensing."},
+
+  {id:"whipped_cream",name:"Whipped cream",category:"Optional presentation upgrades",recipes:{4:1,13:1,15:1},unit:"can",packageAmount:1,packageLabel:"aerosol can",combine:"max",alternative:"Optional appearance upgrade; omit without changing the drink base.",defaultInclude:false},
+  {id:"brownies",name:"Brownies or Cosmic Brownies",category:"Optional presentation upgrades",recipes:{15:1},unit:"package",packageAmount:1,packageLabel:"1 package",alternative:"Optional topping only; add after dispensing.",defaultInclude:false},
+  {id:"pineapple_garnish",name:"Fresh pineapple wedges",category:"Optional presentation upgrades",recipes:{20:1},unit:"pineapple",packageAmount:1,packageLabel:"1 fresh pineapple",alternative:"Optional appearance upgrade; canned rings may be easier.",defaultInclude:false},
+  {id:"coconut_flakes",name:"Sweetened shredded coconut",category:"Optional presentation upgrades",recipes:{20:1},unit:"bag",packageAmount:1,packageLabel:"small bag",alternative:"Optional rim garnish only; never put coconut flakes into the machine.",defaultInclude:false},
+
+  {id:"salt",name:"Fine salt",category:"Pantry items",recipes:{2:0.25},unit:"tsp",packageAmount:122,packageLabel:"26 oz canister",alternative:"Likely already in the pantry.",defaultInclude:false},
+  {id:"sugar",name:"Granulated sugar",category:"Pantry items",recipes:{15:1},unit:"cup",packageAmount:9,packageLabel:"4 lb bag",alternative:"Used for the Brownie Batter Shake. Sugar for homemade simple syrup is listed in its preparation note. Likely already in the pantry.",defaultInclude:false},
+  {id:"water",name:"Cold water",category:"Pantry items",recipes:{16:14,17:8,18:14,19:10,20:8},unit:"oz",packageAmount:128,packageLabel:"1 gallon from home",alternative:"Use clean drinking water and chill completely.",defaultInclude:false}
+];
+const labels={coffee:"☕ Coffee",slush:"🍓 Fruit Slush",shake:"🍦 Milkshake",cocktail:"🍹 Cocktail"};
+const grid=document.getElementById("recipeGrid");
+const overlay=document.getElementById("overlay");
+const title=document.getElementById("modalTitle");
+const cat=document.getElementById("modalCategory");
+const body=document.getElementById("modalBody");
+let lastTrigger=null;
+const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+const activeFilter=()=>document.querySelector(".filter.active")?.dataset.filter||"all";
+
+function render(filter="all"){
+  grid.innerHTML="";
+  recipes.filter(r=>filter==="all"||r.category===filter).forEach((r,i)=>{
+    const card=document.createElement("article");
+    card.className="card";
+    card.innerHTML=`
+      <div class="meta">
+        <span class="pill">${labels[r.category]||escapeHtml(r.category)}</span>
+        <span class="pill votes">${r.votes} vote${r.votes===1?"":"s"}</span>
+      </div>
+      <h3>${escapeHtml(r.name)}</h3>
+      <div class="ingredients"><strong>Estimated yield:</strong> ${escapeHtml(r.yield||"8 servings (8 oz each)")}</div>
+      <div class="ingredients"><strong>Ingredient overlap:</strong> ${escapeHtml(r.overlap)}</div>
+      <button type="button" data-index="${r._index}" aria-label="View recipe for ${escapeHtml(r.name)}">View Recipe</button>`;
+    grid.appendChild(card);
+  });
+  grid.querySelectorAll("button").forEach(btn=>btn.addEventListener("click",e=>{
+    lastTrigger=e.currentTarget;
+    openRecipe(recipes.find(r=>r._index===Number(btn.dataset.index)));
+  }));
+}
+function openRecipe(r){
+  cat.textContent=labels[r.category];
+  title.textContent=r.name;
+  body.innerHTML=`
+    <p><strong>Estimated yield:</strong> ${escapeHtml(r.yield||"8 servings (8 oz each)")} · <strong>Batch:</strong> ${escapeHtml(r.batch||"64 oz")}</p>
+    <div class="recipe-grid">
+      <section><h4>Machine ingredients</h4><ul>${r.ingredients.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ul></section>
+      <section><h4>Method</h4><ol>${r.steps.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ol></section>
+    </div>
+    ${r.toppings?.length?`<section><h4>Add only after dispensing</h4><ul>${r.toppings.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ul></section>`:""}
+    <div class="note"><strong>SLUSHi safeguards:</strong> Chill the complete liquid base before adding it. Fully dissolve sugar, syrups, nut spreads, pudding mix, cocoa, and marshmallow products. Blend homemade fruit bases completely smooth and strain seeds, pulp, and chunks. Never put cookie dough, brownies, graham crackers, coconut flakes, fruit chunks, or marshmallows into the machine. Keep every batch at or below the 64 oz MAX FILL line.${r.category==="cocktail"?" Excess alcohol can prevent freezing; preserve the listed alcohol and dilution amounts.":""}</div>
+    <div class="note"><strong>Why it made the menu:</strong> ${escapeHtml(r.note)}</div>
+    ${recipeOverrides[r._index]?'<div class="edit-warning">This recipe has saved browser edits. The grocery list is not recalculated automatically.</div>':""}
+    <div class="modal-actions">
+      <button type="button" class="primary edit-recipe">Edit Recipe</button>
+      ${recipeOverrides[r._index]?'<button type="button" class="restore-recipe">Restore Original</button>':""}
+    </div>`;
+  body.querySelector(".edit-recipe").addEventListener("click",()=>openRecipeEditor(r._index));
+  const restoreButton=body.querySelector(".restore-recipe");
+  if(restoreButton)restoreButton.addEventListener("click",()=>{
+    delete recipeOverrides[r._index];
+    clearGroceryChecksForRecipe(r._index);
+    persistRecipeOverrides();
+    render(activeFilter());
+    openRecipe(recipes.find(item=>item._index===r._index));
+  });
+  overlay.classList.remove("hidden");
+  document.body.style.overflow="hidden";
+  document.getElementById("closeBtn").focus();
+}
+function openRecipeEditor(index){
+  const r=recipes.find(item=>item._index===index);
+  cat.textContent="✏️ Local recipe editor";
+  title.textContent=`Edit ${r.name}`;
+  body.innerHTML=`
+    <div class="edit-warning"><strong>Saved locally:</strong> Changes persist in this browser on this computer. They do not rewrite the underlying HTML file or automatically recalculate the grocery list.</div>
+    <form id="recipeEditor" class="editor-grid">
+      <label>Recipe name<input id="editName" required value="${escapeHtml(r.name)}"></label>
+      <label>Category<select id="editCategory">${Object.keys(labels).map(value=>`<option value="${value}" ${r.category===value?"selected":""}>${labels[value]}</option>`).join("")}</select></label>
+      <label>Estimated yield<input id="editYield" value="${escapeHtml(r.yield||"8 servings (8 oz each)")}"></label>
+      <label>Batch size<input id="editBatch" value="${escapeHtml(r.batch||"64 oz")}"></label>
+      <label class="wide">Ingredient overlap<input id="editOverlap" value="${escapeHtml(r.overlap)}"></label>
+      <label class="wide">Ingredients — one per line<textarea id="editIngredients" required>${escapeHtml(r.ingredients.join("\n"))}</textarea></label>
+      <label class="wide">Toppings / solids — one per line, added only after dispensing<textarea id="editToppings">${escapeHtml((r.toppings||[]).join("\n"))}</textarea></label>
+      <label class="wide">Instructions — one step per line<textarea id="editSteps" required>${escapeHtml(r.steps.join("\n"))}</textarea></label>
+      <label class="wide">Menu note<textarea id="editNote">${escapeHtml(r.note)}</textarea></label>
+      <div class="wide modal-actions">
+        <button type="submit" class="primary">Save Changes</button>
+        <button type="button" id="cancelEdit">Cancel</button>
+        ${recipeOverrides[index]?'<button type="button" id="restoreFromEditor">Restore Original</button>':""}
+      </div>
+    </form>`;
+  document.getElementById("recipeEditor").addEventListener("submit",event=>{
+    event.preventDefault();
+    recipeOverrides[index]={
+      name:document.getElementById("editName").value.trim(),
+      category:document.getElementById("editCategory").value,
+      yield:document.getElementById("editYield").value.trim(),
+      batch:document.getElementById("editBatch").value.trim(),
+      overlap:document.getElementById("editOverlap").value.trim(),
+      ingredients:document.getElementById("editIngredients").value.split("\n").map(x=>x.trim()).filter(Boolean),
+      toppings:document.getElementById("editToppings").value.split("\n").map(x=>x.trim()).filter(Boolean),
+      steps:document.getElementById("editSteps").value.split("\n").map(x=>x.trim()).filter(Boolean),
+      note:document.getElementById("editNote").value.trim()
+    };
+    clearGroceryChecksForRecipe(index);
+    persistRecipeOverrides();
+    render(activeFilter());
+    openRecipe(recipes.find(item=>item._index===index));
+  });
+  document.getElementById("cancelEdit").addEventListener("click",()=>openRecipe(r));
+  const restoreEditor=document.getElementById("restoreFromEditor");
+  if(restoreEditor)restoreEditor.addEventListener("click",()=>{
+    delete recipeOverrides[index];
+    clearGroceryChecksForRecipe(index);
+    persistRecipeOverrides();
+    render(activeFilter());
+    openRecipe(recipes.find(item=>item._index===index));
+  });
+  document.getElementById("editName").focus();
+}
+const formatAmount=value=>Number.isInteger(value)?String(value):Number(value.toFixed(1)).toString();
+const shortGroceryAlternative=item=>{
+  const firstSentence=String(item.alternative||"").split(/[.;]/)[0].trim();
+  return firstSentence.length>80?`${firstSentence.slice(0,77)}...`:firstSentence;
+};
+function groceryMetrics(item,multiplier){
+  const required=requiredForItem(item,multiplier);
+  const option=item;
+  const packages=required?Math.ceil(required/option.packageAmount):0;
+  return {required,packages,option};
+}
+function renderGrocery(multiplier=1){
+  const selectedRecipes=recipes.filter(r=>selectedRecipeIndexes.has(r._index));
+  const relevantItems=groceryCatalog.filter(item=>requiredForItem(item,multiplier)>0);
+  const checkedCount=relevantItems.filter(item=>checkedGroceryItems[`${multiplier}:${item.id}`]).length;
+  const summaryLines=relevantItems.map(item=>{
+    const metrics=groceryMetrics(item,multiplier);
+    const tag=item.category==="Optional presentation upgrades"?" [optional]":item.category==="Pantry items"?" [pantry]":"";
+    const alternative=shortGroceryAlternative(item);
+    return `${item.name}${tag} — ${metrics.packages} × ${metrics.option.packageLabel}${alternative?` (${alternative})`:""}`;
+  });
+  const eliminated=[
+    "Separate half-and-half purchase",
+    "Separate chocolate-drizzle product",
+    ...(selectedRecipeIndexes.has(1)?["Specialty peanut butter syrup when smooth peanut butter is used"]:[]),
+    ...(selectedRecipeIndexes.has(3)||selectedRecipeIndexes.has(11)?["Bottled toasted-marshmallow syrup when marshmallow crème is used"]:[]),
+    ...(selectedRecipeIndexes.has(18)?["Bottled simple syrup when made at home"]:[]),
+    ...(relevantItems.some(item=>item.id==="cold_brew")?["Bottled cold brew when the homemade option is selected"]:[])
+  ];
+  const editedSelected=selectedRecipes.filter(r=>recipeOverrides[r._index]);
+  cat.textContent="🛒 Selected-recipe shopping";
+  title.textContent="Grocery Planner";
+  body.innerHTML=`<p>Select recipes first. The catalog then rounds required amounts up to practical whole packages.</p>
+    <div class="batch-toggle" aria-label="Grocery quantity">
+      <strong>Recipe quantity:</strong>
+      <button type="button" class="grocery-multiplier ${multiplier===1?"active":""}" data-multiplier="1" aria-pressed="${multiplier===1}">Make each once (1×)</button>
+      <button type="button" class="grocery-multiplier ${multiplier===2?"active":""}" data-multiplier="2" aria-pressed="${multiplier===2}">Make each twice (2×)</button>
+    </div>
+    <h3>Choose recipes</h3>
+    <div class="selector-actions">
+      <button type="button" id="selectAllRecipes">Select All</button>
+      <button type="button" id="clearAllRecipes">Clear All</button>
+      <button type="button" id="clearCheckedItems">Clear Checked Items</button>
+    </div>
+    <div class="recipe-picker">${[...recipes].sort((a,b)=>b.votes-a.votes||a.name.localeCompare(b.name)).map(r=>`<label class="check-row recipe-choice"><input type="checkbox" class="recipe-selector" data-recipe-index="${r._index}" ${selectedRecipeIndexes.has(r._index)?"checked":""}><span>${escapeHtml(r.name)} · ${r.votes} vote${r.votes===1?"":"s"}</span></label>`).join("")}</div>
+    <section class="grocery-summary-card">
+      <h3>Copy-ready grocery summary</h3>
+      <p>Item and whole-package quantity, with an alternative in parentheses.</p>
+      <textarea id="grocerySummaryText" wrap="off" readonly>${escapeHtml(summaryLines.join("\n"))}</textarea>
+      <div class="grocery-tools"><button type="button" id="copyGrocerySummary" class="primary">Copy Summary</button><span id="copySummaryStatus" class="copy-status" aria-live="polite"></span></div>
+    </section>
+    <div class="grocery-tools"><button type="button" id="printGrocery" class="primary">Print Grocery List</button></div>
+    <div class="shopping-progress">${checkedCount} of ${relevantItems.length} grocery items checked off</div>
+    <div class="note"><strong>Ingredients eliminated through substitutions:</strong> ${eliminated.map(escapeHtml).join("; ")||"None for the selected recipes."}</div>
+    ${editedSelected.length?`<div class="edit-warning"><strong>Edited recipes:</strong> ${editedSelected.map(r=>escapeHtml(r.name)).join(", ")}. The structured quantities use the default formulas. Review the edited ingredient lines shown at the end and adjust purchases as needed.</div>`:""}
+    ${selectedRecipes.length?groceryCategories.map(category=>{
+      const items=relevantItems.filter(item=>item.category===category);
+      if(!items.length)return "";
+      return `<section class="grocery-category-card"><div class="grocery-category-head"><h3>${category}</h3><strong>${items.length} item${items.length===1?"":"s"}</strong></div>${items.map(item=>{
+        const metrics=groceryMetrics(item,multiplier);
+        const key=`${multiplier}:${item.id}`;
+        return `<article class="grocery-item-card"><div class="grocery-item-head"><label class="check-row"><input type="checkbox" class="grocery-item-check structured-check" data-check-key="${key}" ${checkedGroceryItems[key]?"checked":""}><span><strong>${escapeHtml(item.name)}</strong></span></label></div>
+          <div class="grocery-metrics"><span><strong>Buy:</strong> ${metrics.packages} × ${escapeHtml(metrics.option.packageLabel)}</span><span><strong>Required:</strong> ${formatAmount(metrics.required)} ${item.unit}</span></div>
+          ${item.convenience?`<div class="alternative"><strong>Convenience option:</strong> ${Math.ceil(metrics.required/item.convenience.packageAmount)} × ${escapeHtml(item.convenience.packageLabel)}</div>`:""}
+          <div class="alternative"><strong>Alternative / note:</strong> ${escapeHtml(item.alternative)}</div></article>`;
+      }).join("")}</section>`;
+    }).join(""):'<div class="note">Select at least one recipe to build the grocery list.</div>'}
+    ${editedSelected.length?`<section class="grocery-category-card"><div class="grocery-category-head"><h3>Edited recipe ingredients to review</h3><span>Review manually</span></div>${editedSelected.map(r=>`<div class="grocery-recipe"><h3>${escapeHtml(r.name)}</h3>${r.ingredients.map((ingredient,index)=>{const key=`custom:${r._index}:${index}`;return `<label class="check-row"><input type="checkbox" class="grocery-item-check" data-check-key="${key}" ${checkedGroceryItems[key]?"checked":""}><span>${escapeHtml(ingredient)}</span></label>`}).join("")}</div>`).join("")}</section>`:""}
+    <div class="note"><strong>Package-size note:</strong> Container sizes vary by store, brand, and availability. Use the listed alternatives when an equivalent size is easier to find.</div>`;
+  body.querySelectorAll(".grocery-multiplier").forEach(btn=>btn.addEventListener("click",()=>renderGrocery(Number(btn.dataset.multiplier))));
+  body.querySelectorAll(".recipe-selector").forEach(box=>box.addEventListener("change",()=>{const index=Number(box.dataset.recipeIndex);if(box.checked)selectedRecipeIndexes.add(index);else selectedRecipeIndexes.delete(index);persistGroceryState();renderGrocery(multiplier)}));
+  body.querySelectorAll(".grocery-item-check").forEach(box=>box.addEventListener("change",()=>{if(box.checked)checkedGroceryItems[box.dataset.checkKey]=true;else delete checkedGroceryItems[box.dataset.checkKey];persistGroceryState();const progress=body.querySelector(".shopping-progress");if(progress)progress.textContent=`${body.querySelectorAll(".structured-check:checked").length} of ${relevantItems.length} grocery items checked off`}));
+  document.getElementById("selectAllRecipes").addEventListener("click",()=>{selectedRecipeIndexes=new Set(recipes.map(r=>r._index));persistGroceryState();renderGrocery(multiplier)});
+  document.getElementById("clearAllRecipes").addEventListener("click",()=>{selectedRecipeIndexes.clear();persistGroceryState();renderGrocery(multiplier)});
+  document.getElementById("clearCheckedItems").addEventListener("click",()=>{checkedGroceryItems={};persistGroceryState();renderGrocery(multiplier)});
+  document.getElementById("copyGrocerySummary").addEventListener("click",async()=>{
+    const summary=document.getElementById("grocerySummaryText");
+    const status=document.getElementById("copySummaryStatus");
+    try{
+      await navigator.clipboard.writeText(summary.value);
+      status.textContent="Copied!";
+    }catch(error){
+      summary.focus();summary.select();
+      const copied=document.execCommand("copy");
+      status.textContent=copied?"Copied!":"Select the text and press Ctrl+C.";
+    }
+  });
+  document.getElementById("printGrocery").addEventListener("click",()=>window.print());
+}
+function openGrocery(){
+  renderGrocery(1);
+  overlay.classList.remove("hidden");
+  document.body.style.overflow="hidden";
+  document.getElementById("closeBtn").focus();
+}
+function closeModal(){
+  overlay.classList.add("hidden");
+  document.body.style.overflow="";
+  if(lastTrigger)lastTrigger.focus();
+}
+document.querySelectorAll(".filter").forEach(btn=>btn.addEventListener("click",()=>{
+  document.querySelectorAll(".filter").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  render(btn.dataset.filter);
+}));
+document.getElementById("groceryBtn").addEventListener("click",e=>{lastTrigger=e.currentTarget;openGrocery()});
+document.getElementById("resetEditsBtn").addEventListener("click",()=>{
+  if(Object.keys(recipeOverrides).length===0)return;
+  if(!confirm("Restore every recipe to the original menu and remove all browser-saved edits?"))return;
+  recipeOverrides={};
+  checkedGroceryItems={};
+  persistGroceryState();
+  persistRecipeOverrides();
+  render(activeFilter());
+});
+document.getElementById("closeBtn").addEventListener("click",closeModal);
+overlay.addEventListener("click",e=>{if(e.target===overlay)closeModal()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!overlay.classList.contains("hidden"))closeModal()});
+refreshRecipes();
+render();
+</script>
+</body>
+</html>
