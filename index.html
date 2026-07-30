@@ -731,8 +731,10 @@ function adjustedMachineIngredients(profile,target){
     }
   }
   const changedNames=[...changed].filter(index=>index!==profile.alcoholIndex).map(index=>adjusted[index].name);
+  const affected=[profile.name,...changedNames];
+  const affectedText=affected.length===2?affected.join(" and "):`${affected.slice(0,-1).join(", ")}, and ${affected.at(-1)}`;
   const summary=changedNames.length
-    ?`The calculator changed ${profile.name} and ${changedNames.join(", ")} so the machine batch remains ${formatAmount(profile.batchOz)} oz.`
+    ?`The calculator adjusted ${affectedText} so the machine batch remains ${formatAmount(profile.batchOz)} oz.`
     :`The calculator changed ${profile.name}; verify the other liquids still total ${formatAmount(profile.batchOz)} oz.`;
   return {ingredients:adjusted,changed,summary};
 }
@@ -741,7 +743,7 @@ function renderAdjustedMachineIngredients(profile,target){
   const status=document.getElementById("machineIngredientStatus");
   if(!list||!status)return;
   const adjusted=adjustedMachineIngredients(profile,target);
-  list.innerHTML=adjusted.ingredients.map((item,index)=>`<li class="${adjusted.changed.has(index)?"calculator-adjusted":""}">${escapeHtml(formatIngredientLine(item))}</li>`).join("");
+  list.innerHTML=adjusted.ingredients.map((item,index)=>({item,index})).filter(({item})=>item.quantityOz>.009).map(({item,index})=>`<li class="${adjusted.changed.has(index)?"calculator-adjusted":""}">${escapeHtml(formatIngredientLine(item))}</li>`).join("");
   status.textContent=adjusted.summary;
 }
 function updateAlcoholCalculator(profile){
@@ -770,7 +772,6 @@ function updateAlcoholCalculator(profile){
     <div class="freeze-result"><strong>Ninja-based maximum</strong>${maxLabel}</div>
     <div class="freeze-result"><strong>Estimated finished drink</strong>${formatAmount(drinkAbv)}% ABV</div>
   </div>
-  <p class="freeze-adjustment">${escapeHtml(adjusted.summary)}</p>
   ${capped?`<p class="freeze-warning">The equivalent-strength target would be ${formatAmount(uncappedTarget)} oz, so the recommendation was capped at the Ninja-based maximum. Expect a slightly lower finished-drink ABV.</p>`:""}
   <p class="alternative">This preserves the recipe's intended alcohol strength. Water is adjusted first; if water cannot absorb the full difference, the largest mixer is adjusted next. The maximum also applies Ninja's 16% finished-drink ceiling and, at 35% bottle ABV or higher, the 4-oz-spirit-per-24-oz-recipe guideline. Very sweet mixers may still need additional unsweetened dilution.</p>`;
   renderAdjustedMachineIngredients(profile,target);
