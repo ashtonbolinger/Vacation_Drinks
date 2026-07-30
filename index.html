@@ -175,11 +175,6 @@
   <div style="font-size:2rem">🏖️🍹🌴</div>
   <h1>Vacation Ninja SLUSHi Menu</h1>
   <p>Preference-first menu optimized for ingredient sharing. The machine has an 88-ounce vessel with a 64-ounce MAX FILL line; most recipes make a 64-ounce batch, while smaller specialty recipes show their own yield.</p>
-  <div class="update-tools">
-    <label>Page updated<input id="updatedDate" type="date"></label>
-    <button id="saveHtmlBtn" type="button" class="primary">Save Updated HTML</button>
-    <span id="saveHtmlStatus" class="update-status" aria-live="polite"></span>
-  </div>
 </header>
 
 <main class="shell">
@@ -202,7 +197,15 @@
   <section id="recipeGrid" class="grid"></section>
 </main>
 
-<footer>Built for Sunday through Friday vacation service. Each recipe shows its estimated batch yield. Pre-chill every base and never exceed the machine’s 64-ounce max-fill line.</footer>
+<footer>
+  <p>Built for Sunday through Friday vacation service. Each recipe shows its estimated batch yield. Pre-chill every base and never exceed the machine’s 64-ounce max-fill line.</p>
+  <div class="update-tools">
+    <label>Page updated<input id="updatedDate" type="date"></label>
+    <button id="saveHtmlBtn" type="button" class="primary">Save Updated HTML</button>
+    <span id="saveHtmlStatus" class="update-status" aria-live="polite"></span>
+  </div>
+  <p class="alternative">Recipe changes are private to this browser until you save an updated HTML file. To change the public website, replace GitHub’s <strong>index.html</strong> with that saved file.</p>
+</footer>
 
 <div id="overlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal">
@@ -636,7 +639,7 @@ function openRecipe(r){
       <section><h4>Method</h4><ol>${r.steps.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ol></section>
     </div>
     ${r.toppings?.length?`<section><h4>Add only after dispensing</h4><ul>${r.toppings.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ul></section>`:""}
-    ${r._custom?'<div class="edit-warning"><strong>Custom recipe:</strong> Saved only in this browser. Its ingredient lines appear in the grocery planner for manual review.</div>':recipeOverrides[r._index]?'<div class="edit-warning">This recipe has saved browser edits. The grocery list is not recalculated automatically.</div>':""}
+    ${r._custom?'<div class="edit-warning"><strong>Custom recipe:</strong> Saved in this browser on this device. Its structured ingredient amounts are included in the grocery planner. Use <strong>Save Updated HTML</strong> at the bottom of the page to put it into an HTML file.</div>':recipeOverrides[r._index]?'<div class="edit-warning">This recipe has browser-saved edits, and its entered ounce amounts are included in the grocery planner. Use <strong>Save Updated HTML</strong> at the bottom of the page to put the edits into an HTML file.</div>':""}
     <div class="modal-actions">
       <button type="button" class="primary edit-recipe">Edit Recipe</button>
       ${!r._custom&&recipeOverrides[r._index]?'<button type="button" class="restore-recipe">Restore Original</button>':""}
@@ -679,7 +682,7 @@ function openRecipeEditor(index){
   cat.textContent="✏️ Local recipe editor";
   title.textContent=`Edit ${r.name}`;
   body.innerHTML=`
-    <div class="edit-warning"><strong>Saved locally:</strong> Changes persist in this browser on this computer. They do not rewrite the underlying HTML file or automatically recalculate the grocery list.</div>
+    <div class="edit-warning"><strong>Saved locally:</strong> Changes persist in this browser on this device, and structured ounce amounts update the grocery planner. Use <strong>Save Updated HTML</strong> at the bottom of the page to put the changes into an HTML file. The public website changes only after that file replaces GitHub’s <strong>index.html</strong>.</div>
     <form id="recipeEditor" class="editor-grid">
       <label>Recipe name<input id="editName" required value="${escapeHtml(r.name)}"></label>
       <label>Category<select id="editCategory">${Object.keys(labels).map(value=>`<option value="${value}" ${r.category===value?"selected":""}>${labels[value]}</option>`).join("")}</select></label>
@@ -737,7 +740,7 @@ function openRecipeCreator(defaultCategory="coffee"){
   cat.textContent="➕ Local recipe creator";
   title.textContent="Add New Recipe";
   body.innerHTML=`
-    <div class="edit-warning"><strong>Saved locally:</strong> This recipe will be stored only in this browser. Keep the liquid batch at or below the 64-ounce MAX FILL line. Its free-form ingredients will be added to the grocery planner as manual review lines.</div>
+    <div class="edit-warning"><strong>Saved locally:</strong> This recipe will be stored in this browser on this device, and its structured ounce amounts will update the grocery planner. Use <strong>Save Updated HTML</strong> at the bottom of the page to put it into an HTML file. The public website changes only after that file replaces GitHub’s <strong>index.html</strong>. Keep the liquid batch at or below the 64-ounce MAX FILL line.</div>
     <form id="recipeEditor" class="editor-grid">
       <label>Recipe name<input id="editName" required placeholder="Recipe name"></label>
       <label>Category<select id="editCategory">${Object.keys(labels).map(value=>`<option value="${value}" ${category===value?"selected":""}>${labels[value]}</option>`).join("")}</select></label>
