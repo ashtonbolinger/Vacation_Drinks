@@ -36,6 +36,10 @@
   }
   header h1{margin:0;font-size:clamp(2rem,6vw,3.7rem);line-height:1.02}
   header p{max-width:760px;margin:12px auto 0;color:var(--muted);font-size:1.05rem}
+  .update-tools{display:flex;justify-content:center;align-items:end;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .update-tools label{display:flex;flex-direction:column;gap:4px;text-align:left;font-size:.78rem;font-weight:750;color:var(--deep)}
+  .update-tools input{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;color:var(--ink);background:white}
+  .update-status{min-width:120px;font-size:.82rem;color:var(--palm);font-weight:750;text-align:left}
   .shell{max-width:1160px;margin:0 auto;padding:22px}
   .toolbar{
     display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:20px;
@@ -106,6 +110,10 @@
     font:inherit;color:var(--ink);background:white
   }
   .editor-grid textarea{min-height:130px;resize:vertical;line-height:1.4}
+  .ingredient-editor{display:flex;flex-direction:column;gap:8px}
+  .ingredient-row{display:grid;grid-template-columns:130px 1fr auto;gap:8px;align-items:center}
+  .ingredient-row button,.add-ingredient-row{border-radius:10px;box-shadow:none;border:1px solid var(--line);padding:9px 12px}
+  .ingredient-row button{color:#9f2f25;background:#fff0ec}
   .edit-warning{margin:12px 0;padding:11px 12px;border-radius:12px;background:#fff0ec;color:#8a352b}
   .recipe-picker{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 18px}
   .check-row{display:flex;align-items:flex-start;gap:9px;padding:9px 10px;border:1px solid var(--line);border-radius:11px;background:#fff}
@@ -146,6 +154,8 @@
     .shell{padding:14px}
     .editor-grid{grid-template-columns:1fr}
     .editor-grid .wide{grid-column:auto}
+    .ingredient-row{grid-template-columns:100px 1fr}
+    .ingredient-row button{grid-column:1/-1}
     .recipe-picker,.selected-grocery{grid-template-columns:1fr}
     .grocery-metrics{grid-template-columns:1fr}
   }
@@ -165,6 +175,11 @@
   <div style="font-size:2rem">🏖️🍹🌴</div>
   <h1>Vacation Ninja SLUSHi Menu</h1>
   <p>Preference-first menu optimized for ingredient sharing. The machine has an 88-ounce vessel with a 64-ounce MAX FILL line; most recipes make a 64-ounce batch, while smaller specialty recipes show their own yield.</p>
+  <div class="update-tools">
+    <label>Page updated<input id="updatedDate" type="date"></label>
+    <button id="saveHtmlBtn" type="button" class="primary">Save Updated HTML</button>
+    <span id="saveHtmlStatus" class="update-status" aria-live="polite"></span>
+  </div>
 </header>
 
 <main class="shell">
@@ -203,6 +218,7 @@
 </div>
 
 <script>
+/*__EXPORTED_STATE_START__*/const EXPORTED_RECIPE_STATE=null;/*__EXPORTED_STATE_END__*/
 const defaultRecipes = [
   {
     name:"Mocha Frappé", category:"coffee", votes:3, overlap:"Coffee + chocolate + milk",
@@ -338,28 +354,47 @@ const defaultRecipes = [
 
 const RECIPE_STORAGE_KEY="vacationSlushiRecipeEditsV1";
 const CUSTOM_RECIPE_STORAGE_KEY="vacationSlushiCustomRecipesV1";
+const UPDATED_DATE_STORAGE_KEY="vacationSlushiUpdatedDateV1";
 let recipeOverrides={};
-try{recipeOverrides=JSON.parse(localStorage.getItem(RECIPE_STORAGE_KEY)||"{}")||{}}catch(e){recipeOverrides={}}
+try{recipeOverrides={...(EXPORTED_RECIPE_STATE?.recipeOverrides||{}),...(JSON.parse(localStorage.getItem(RECIPE_STORAGE_KEY)||"{}")||{})}}catch(e){recipeOverrides={...(EXPORTED_RECIPE_STATE?.recipeOverrides||{})}}
 let customRecipes=[];
 try{
+  const embeddedCustomRecipes=Array.isArray(EXPORTED_RECIPE_STATE?.customRecipes)?EXPORTED_RECIPE_STATE.customRecipes:[];
   const savedCustomRecipes=JSON.parse(localStorage.getItem(CUSTOM_RECIPE_STORAGE_KEY)||"[]");
-  if(Array.isArray(savedCustomRecipes))customRecipes=savedCustomRecipes.filter(r=>r&&Number.isInteger(r.id)&&r.name&&r.category);
-}catch(e){customRecipes=[]}
+  const mergedCustomRecipes=new Map(embeddedCustomRecipes.map(r=>[r.id,r]));
+  if(Array.isArray(savedCustomRecipes))savedCustomRecipes.forEach(r=>mergedCustomRecipes.set(r.id,r));
+  customRecipes=[...mergedCustomRecipes.values()].filter(r=>r&&Number.isInteger(r.id)&&r.name&&r.category);
+}catch(e){customRecipes=(EXPORTED_RECIPE_STATE?.customRecipes||[]).filter(r=>r&&Number.isInteger(r.id)&&r.name&&r.category)}
+let updatedDate=EXPORTED_RECIPE_STATE?.updatedDate||localStorage.getItem(UPDATED_DATE_STORAGE_KEY)||"2026-07-30";
+const localToday=()=>{const date=new Date();return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`};
+function setUpdatedDate(value,{markUnsaved=true}={}){
+  updatedDate=value||localToday();
+  localStorage.setItem(UPDATED_DATE_STORAGE_KEY,updatedDate);
+  const input=document.getElementById("updatedDate");
+  if(input)input.value=updatedDate;
+  if(markUnsaved){
+    const status=document.getElementById("saveHtmlStatus");
+    if(status)status.textContent="HTML save needed";
+  }
+}
+const touchUpdatedDate=()=>setUpdatedDate(localToday());
 let recipes=[];
 function refreshRecipes(){
   recipes=[
-    ...defaultRecipes.map((r,index)=>({...r,...(recipeOverrides[index]||{}),_index:index,_custom:false})),
-    ...customRecipes.map(r=>({...r,_index:r.id,_custom:true}))
+    ...defaultRecipes.map((r,index)=>{const merged={...r,...(recipeOverrides[index]||{})};return {...merged,ingredients:normalizeIngredients(merged.ingredients),_index:index,_custom:false}}),
+    ...customRecipes.map(r=>({...r,ingredients:normalizeIngredients(r.ingredients),_index:r.id,_custom:true}))
   ];
   document.getElementById("resetEditsBtn").disabled=Object.keys(recipeOverrides).length===0;
   document.getElementById("recipeCount").textContent=recipes.length;
 }
 function persistRecipeOverrides(){
   localStorage.setItem(RECIPE_STORAGE_KEY,JSON.stringify(recipeOverrides));
+  touchUpdatedDate();
   refreshRecipes();
 }
 function persistCustomRecipes(){
   localStorage.setItem(CUSTOM_RECIPE_STORAGE_KEY,JSON.stringify(customRecipes));
+  touchUpdatedDate();
   refreshRecipes();
 }
 const GROCERY_SELECTION_KEY="vacationSlushiSelectedRecipesV1";
@@ -377,12 +412,17 @@ function persistGroceryState(){
 }
 function clearGroceryChecksForRecipe(index){
   Object.keys(checkedGroceryItems).forEach(key=>{
-    if(key.split(":")[1]===String(index))delete checkedGroceryItems[key];
+    if(key.startsWith("new:")||key.split(":")[1]===String(index))delete checkedGroceryItems[key];
   });
   persistGroceryState();
 }
 const requiredForItem=(item,multiplier)=>{
-  const quantities=Object.entries(item.recipes).filter(([index])=>selectedRecipeIndexes.has(Number(index))).map(([,amount])=>Number(amount));
+  const quantities=recipes.filter(recipe=>selectedRecipeIndexes.has(recipe._index)).map(recipe=>{
+    if(recipe._custom||recipeOverrides[recipe._index]){
+      return recipe.ingredients.filter(ingredient=>findGroceryItemForIngredient(ingredient.name)?.id===item.id).reduce((sum,ingredient)=>sum+(ingredient.quantityOz||0),0);
+    }
+    return Number(item.recipes[recipe._index]||0);
+  }).filter(amount=>amount>0);
   if(!quantities.length)return 0;
   return (item.combine==="max"?Math.max(...quantities):quantities.reduce((sum,value)=>sum+value,0))*multiplier;
 };
@@ -418,7 +458,7 @@ const groceryCatalog=[
   {id:"peanut_butter",name:"Smooth peanut butter",category:"Flavorings and mix-ins",recipes:{1:1},unit:"oz",packageAmount:16,packageLabel:"16 oz jar",alternative:"Blend with a little warm milk, cream, or water and chocolate syrup until completely smooth; cool before adding. Convenience alternative: peanut butter syrup.",convenience:{packageAmount:12,packageLabel:"12 oz peanut butter syrup"}},
   {id:"marshmallow_creme",name:"Marshmallow crème",category:"Flavorings and mix-ins",recipes:{3:1,11:1},unit:"oz",packageAmount:7,packageLabel:"7 oz jar",alternative:"Blend into warm milk and cool. Alternatives: vanilla syrup plus crème, or regular marshmallows melted into warm milk and cooled. Bottled toasted-marshmallow syrup is optional convenience.",convenience:{packageAmount:12,packageLabel:"12 oz toasted-marshmallow syrup"}},
   {id:"nutella",name:"Chocolate-hazelnut spread",category:"Flavorings and mix-ins",recipes:{4:3},unit:"oz",packageAmount:13,packageLabel:"13 oz jar",alternative:"Hazelnut syrup is optional because little is needed. Alternatives: hazelnut creamer, slightly more chocolate or caramel syrup, or spread fully dissolved in warm milk and cooled."},
-  {id:"pudding_mix",name:"Chocolate pudding or mousse mix",category:"Flavorings and mix-ins",recipes:{15:1},unit:"packet",packageAmount:1,packageLabel:"small 3.9 oz packet",alternative:"Keep one packet for texture. Alternative: cocoa powder plus granulated sugar and heavy cream or whole milk. Dissolve every powdered ingredient completely before chilling and adding."},
+  {id:"pudding_mix",name:"Chocolate pudding or mousse mix",category:"Flavorings and mix-ins",recipes:{15:3.9},unit:"oz",packageAmount:3.9,packageLabel:"small 3.9 oz packet",alternative:"Keep one packet for texture. Alternative: cocoa powder plus granulated sugar and heavy cream or whole milk. Dissolve every powdered ingredient completely before chilling and adding."},
   {id:"simple_syrup",name:"Simple syrup",category:"Flavorings and mix-ins",recipes:{18:6},unit:"oz",packageAmount:16,packageLabel:"16 oz homemade batch",alternative:"Preferred: combine 1 cup granulated sugar with 1 cup water, heat or stir until dissolved, and cool completely. Convenience alternative: bottled syrup.",convenience:{packageAmount:12,packageLabel:"12 oz bottle"}},
 
   {id:"tequila",name:"Tequila",category:"Alcohol",recipes:{16:10},unit:"oz",packageAmount:25.4,packageLabel:"750 mL bottle",alternative:"Do not increase alcohol without validating freeze performance; excess alcohol can prevent freezing."},
@@ -434,10 +474,44 @@ const groceryCatalog=[
   {id:"pineapple_garnish",name:"Fresh pineapple wedges",category:"Optional presentation upgrades",recipes:{20:1},unit:"pineapple",packageAmount:1,packageLabel:"1 fresh pineapple",alternative:"Optional appearance upgrade; canned rings may be easier.",defaultInclude:false},
   {id:"coconut_flakes",name:"Sweetened shredded coconut",category:"Optional presentation upgrades",recipes:{20:1},unit:"bag",packageAmount:1,packageLabel:"small bag",alternative:"Optional rim garnish only; never put coconut flakes into the machine.",defaultInclude:false},
 
-  {id:"salt",name:"Fine salt",category:"Pantry items",recipes:{2:0.25},unit:"tsp",packageAmount:122,packageLabel:"26 oz canister",alternative:"Likely already in the pantry.",defaultInclude:false},
-  {id:"sugar",name:"Granulated sugar",category:"Pantry items",recipes:{15:1},unit:"cup",packageAmount:9,packageLabel:"4 lb bag",alternative:"Used for the Brownie Batter Shake. Sugar for homemade simple syrup is listed in its preparation note. Likely already in the pantry.",defaultInclude:false},
+  {id:"salt",name:"Fine salt",category:"Pantry items",recipes:{2:0.05},unit:"oz",packageAmount:26,packageLabel:"26 oz canister",alternative:"Likely already in the pantry.",defaultInclude:false},
+  {id:"sugar",name:"Granulated sugar",category:"Pantry items",recipes:{15:3.5},unit:"oz",packageAmount:64,packageLabel:"4 lb bag",alternative:"Used for the Brownie Batter Shake. Sugar for homemade simple syrup is listed in its preparation note. Likely already in the pantry.",defaultInclude:false},
   {id:"water",name:"Cold water",category:"Pantry items",recipes:{16:14,17:8,18:14,19:10,20:8},unit:"oz",packageAmount:128,packageLabel:"1 gallon from home",alternative:"Use clean drinking water and chill completely.",defaultInclude:false}
 ];
+const groceryIngredientAliases={
+  cold_brew:["cold brew","espresso","strong brewed coffee"],
+  chocolate_milk:["chocolate milk"],
+  whole_milk:["whole milk"],
+  heavy_cream:["heavy cream","heavy whipping cream"],
+  vanilla_creamer:["vanilla coffee creamer","vanilla creamer"],
+  lemonade:["lemonade"],sweet_tea:["sweet tea"],orange_juice:["orange juice"],
+  peach:["peach nectar","peach puree","peach purée"],mango:["mango nectar","mango juice"],
+  strawberry:["strawberry puree","strawberry purée","strawberry nectar"],
+  tropical_punch:["tropical fruit punch","fruit punch"],pineapple_juice:["pineapple juice"],
+  passionfruit:["passionfruit juice","passion fruit juice"],margarita_mix:["margarita mix"],
+  lemon_juice:["lemon juice"],lime_juice:["lime juice"],ginger_beer:["ginger beer"],
+  cream_coconut:["cream of coconut"],chocolate_syrup:["chocolate syrup"],caramel_syrup:["caramel syrup"],
+  peanut_butter:["peanut butter"],marshmallow_creme:["marshmallow blend","marshmallow crème","marshmallow creme"],
+  nutella:["nutella","chocolate-hazelnut spread"],pudding_mix:["pudding mix","mousse mix"],simple_syrup:["simple syrup"],
+  tequila:["tequila"],prosecco:["prosecco"],bourbon:["bourbon","whiskey"],rum:["white rum","rum"],
+  salt:["fine salt"],sugar:["granulated sugar"],water:["cold water"]
+};
+function findGroceryItemForIngredient(name){
+  const normalized=String(name||"").toLowerCase();
+  const matchedId=Object.keys(groceryIngredientAliases).find(id=>groceryIngredientAliases[id].some(alias=>normalized.includes(alias)));
+  return matchedId?groceryCatalog.find(item=>item.id===matchedId):null;
+}
+function unmatchedIngredientTotals(selectedRecipes,multiplier){
+  const totals=new Map();
+  selectedRecipes.filter(recipe=>recipe._custom||recipeOverrides[recipe._index]).forEach(recipe=>recipe.ingredients.forEach(ingredient=>{
+    if(findGroceryItemForIngredient(ingredient.name))return;
+    const key=ingredient.name.trim().toLowerCase();
+    const existing=totals.get(key)||{name:ingredient.name,quantityOz:0};
+    existing.quantityOz+=(ingredient.quantityOz||0)*multiplier;
+    totals.set(key,existing);
+  }));
+  return [...totals.values()].sort((a,b)=>a.name.localeCompare(b.name));
+}
 const labels={coffee:"☕ Coffee",slush:"🍓 Fruit Slush",shake:"🍦 Milkshake",cocktail:"🍹 Cocktail"};
 const grid=document.getElementById("recipeGrid");
 const overlay=document.getElementById("overlay");
@@ -447,6 +521,45 @@ const body=document.getElementById("modalBody");
 let lastTrigger=null;
 const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const activeFilter=()=>document.querySelector(".filter.active")?.dataset.filter||"all";
+const validIngredientAmount=value=>Number.isFinite(Number(value))&&Number(value)>0?Number(value):null;
+function normalizeIngredient(ingredient){
+  if(ingredient&&typeof ingredient==="object")return {quantityOz:validIngredientAmount(ingredient.quantityOz),name:String(ingredient.name||"").trim()};
+  const text=String(ingredient||"").trim();
+  let match=text.match(/^(?:up to\s+)?(\d+(?:\.\d+)?)\s*oz\s+(.+)$/i);
+  if(match)return {quantityOz:Number(match[1]),name:match[2].trim()};
+  const special=[
+    [/^500\s*mL\s+whole milk/i,17,"whole milk"],
+    [/^4 heaping tablespoons Nutella/i,3,"Nutella, warmed slightly so it dissolves smoothly"],
+    [/^2 shots cooled espresso/i,4,"cooled espresso or strong brewed coffee"],
+    [/^1\/4 cup \(2 oz\) heavy cream/i,2,"heavy cream"],
+    [/^1\/4 teaspoon fine salt/i,.05,"fine salt (about 1/4 teaspoon)"],
+    [/^1 packet chocolate mousse mix/i,3.9,"chocolate mousse mix or instant chocolate pudding mix (1 small packet)"],
+    [/^1\/2 cup granulated sugar/i,3.5,"granulated sugar (start with 1/2 cup; increase to taste)"],
+    [/^Up to 8 oz additional whole milk/i,8,"additional whole milk, as needed to reach the 64 oz finished base"]
+  ];
+  const found=special.find(([pattern])=>pattern.test(text));
+  return found?{quantityOz:found[1],name:found[2]}:{quantityOz:null,name:text};
+}
+const normalizeIngredients=ingredients=>(Array.isArray(ingredients)?ingredients:[]).map(normalizeIngredient).filter(item=>item.name);
+const formatIngredientLine=ingredient=>`${ingredient.quantityOz?`${formatAmount(ingredient.quantityOz)} oz `:""}${ingredient.name}`;
+const ingredientRowsHtml=ingredients=>normalizeIngredients(ingredients).map(item=>`<div class="ingredient-row"><input class="ingredient-oz" type="number" min="0.01" step="0.01" required aria-label="Quantity in ounces" value="${item.quantityOz??""}"><input class="ingredient-name" required aria-label="Ingredient name" value="${escapeHtml(item.name)}"><button type="button" class="remove-ingredient">Remove</button></div>`).join("");
+function addIngredientEditorRow(container,ingredient={quantityOz:"",name:""}){
+  container.insertAdjacentHTML("beforeend",`<div class="ingredient-row"><input class="ingredient-oz" type="number" min="0.01" step="0.01" required aria-label="Quantity in ounces" value="${ingredient.quantityOz??""}"><input class="ingredient-name" required aria-label="Ingredient name" value="${escapeHtml(ingredient.name||"")}"><button type="button" class="remove-ingredient">Remove</button></div>`);
+}
+function setupIngredientEditor(){
+  const container=document.getElementById("ingredientRows");
+  container.addEventListener("click",event=>{
+    const removeButton=event.target.closest(".remove-ingredient");
+    if(removeButton&&container.querySelectorAll(".ingredient-row").length>1)removeButton.closest(".ingredient-row").remove();
+  });
+  document.getElementById("addIngredientRow").addEventListener("click",()=>addIngredientEditorRow(container));
+}
+function collectIngredientRows(){
+  return [...document.querySelectorAll("#ingredientRows .ingredient-row")].map(row=>({
+    quantityOz:Number(row.querySelector(".ingredient-oz").value),
+    name:row.querySelector(".ingredient-name").value.trim()
+  })).filter(item=>item.quantityOz>0&&item.name);
+}
 
 function render(filter="all"){
   grid.innerHTML="";
@@ -519,7 +632,7 @@ function openRecipe(r){
   body.innerHTML=`
     <p><strong>Estimated yield:</strong> ${escapeHtml(r.yield||"8 servings (8 oz each)")} · <strong>Batch:</strong> ${escapeHtml(r.batch||"64 oz")}</p>
     <div class="recipe-grid">
-      <section><h4>Machine ingredients</h4><ul>${r.ingredients.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ul></section>
+      <section><h4>Machine ingredients</h4><ul>${r.ingredients.map(x=>`<li>${escapeHtml(formatIngredientLine(x))}</li>`).join("")}</ul></section>
       <section><h4>Method</h4><ol>${r.steps.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ol></section>
     </div>
     ${r.toppings?.length?`<section><h4>Add only after dispensing</h4><ul>${r.toppings.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ul></section>`:""}
@@ -573,7 +686,7 @@ function openRecipeEditor(index){
       <label>Estimated yield<input id="editYield" value="${escapeHtml(r.yield||"8 servings (8 oz each)")}"></label>
       <label>Batch size<input id="editBatch" value="${escapeHtml(r.batch||"64 oz")}"></label>
       <label class="wide">Ingredient overlap<input id="editOverlap" value="${escapeHtml(r.overlap)}"></label>
-      <label class="wide">Ingredients — one per line<textarea id="editIngredients" required>${escapeHtml(r.ingredients.join("\n"))}</textarea></label>
+      <div class="wide"><strong>Machine ingredients</strong><div class="alternative">Enter the quantity in ounces separately from the ingredient name.</div><div id="ingredientRows" class="ingredient-editor">${ingredientRowsHtml(r.ingredients)}</div><button type="button" id="addIngredientRow" class="add-ingredient-row">＋ Add Ingredient</button></div>
       <label class="wide">Toppings / solids — one per line, added only after dispensing<textarea id="editToppings">${escapeHtml((r.toppings||[]).join("\n"))}</textarea></label>
       <label class="wide">Instructions — one step per line<textarea id="editSteps" required>${escapeHtml(r.steps.join("\n"))}</textarea></label>
       <div class="wide modal-actions">
@@ -590,7 +703,7 @@ function openRecipeEditor(index){
       yield:document.getElementById("editYield").value.trim(),
       batch:document.getElementById("editBatch").value.trim(),
       overlap:document.getElementById("editOverlap").value.trim(),
-      ingredients:document.getElementById("editIngredients").value.split("\n").map(x=>x.trim()).filter(Boolean),
+      ingredients:collectIngredientRows(),
       toppings:document.getElementById("editToppings").value.split("\n").map(x=>x.trim()).filter(Boolean),
       steps:document.getElementById("editSteps").value.split("\n").map(x=>x.trim()).filter(Boolean)
     };
@@ -607,6 +720,7 @@ function openRecipeEditor(index){
     render(activeFilter());
     openRecipe(recipes.find(item=>item._index===index));
   });
+  setupIngredientEditor();
   document.getElementById("cancelEdit").addEventListener("click",()=>openRecipe(r));
   const restoreEditor=document.getElementById("restoreFromEditor");
   if(restoreEditor)restoreEditor.addEventListener("click",()=>{
@@ -630,7 +744,7 @@ function openRecipeCreator(defaultCategory="coffee"){
       <label>Estimated yield<input id="editYield" value="8 servings (8 oz each)"></label>
       <label>Batch size<input id="editBatch" value="64 oz"></label>
       <label class="wide">Ingredient overlap<input id="editOverlap" placeholder="Ingredients shared with other recipes"></label>
-      <label class="wide">Ingredients — one per line<textarea id="editIngredients" required placeholder="Example: 32 oz chilled lemonade"></textarea></label>
+      <div class="wide"><strong>Machine ingredients</strong><div class="alternative">Enter the quantity in ounces separately from the ingredient name.</div><div id="ingredientRows" class="ingredient-editor"><div class="ingredient-row"><input class="ingredient-oz" type="number" min="0.01" step="0.01" required aria-label="Quantity in ounces" placeholder="Ounces"><input class="ingredient-name" required aria-label="Ingredient name" placeholder="Ingredient"><button type="button" class="remove-ingredient">Remove</button></div></div><button type="button" id="addIngredientRow" class="add-ingredient-row">＋ Add Ingredient</button></div>
       <label class="wide">Toppings / solids — one per line, added only after dispensing<textarea id="editToppings" placeholder="Optional toppings"></textarea></label>
       <label class="wide">Instructions — one step per line<textarea id="editSteps" required placeholder="Example: Whisk the chilled ingredients together."></textarea></label>
       <div class="wide modal-actions">
@@ -650,7 +764,7 @@ function openRecipeCreator(defaultCategory="coffee"){
       yield:document.getElementById("editYield").value.trim(),
       batch:document.getElementById("editBatch").value.trim(),
       overlap:document.getElementById("editOverlap").value.trim()||"Custom recipe",
-      ingredients:document.getElementById("editIngredients").value.split("\n").map(x=>x.trim()).filter(Boolean),
+      ingredients:collectIngredientRows(),
       toppings:document.getElementById("editToppings").value.split("\n").map(x=>x.trim()).filter(Boolean),
       steps:document.getElementById("editSteps").value.split("\n").map(x=>x.trim()).filter(Boolean)
     });
@@ -660,6 +774,7 @@ function openRecipeCreator(defaultCategory="coffee"){
     render(activeFilter());
     openRecipe(recipes.find(item=>item._index===id));
   });
+  setupIngredientEditor();
   document.getElementById("cancelEdit").addEventListener("click",closeModal);
   overlay.classList.remove("hidden");
   document.body.style.overflow="hidden";
@@ -680,15 +795,16 @@ function renderGrocery(multiplier=1){
   const selectedRecipes=recipes.filter(r=>selectedRecipeIndexes.has(r._index));
   const manualSelected=selectedRecipes.filter(r=>r._custom||recipeOverrides[r._index]);
   const relevantItems=groceryCatalog.filter(item=>requiredForItem(item,multiplier)>0);
-  const checkedCount=relevantItems.filter(item=>checkedGroceryItems[`${multiplier}:${item.id}`]).length;
+  const newIngredients=unmatchedIngredientTotals(selectedRecipes,multiplier);
+  const checkedCount=relevantItems.filter(item=>checkedGroceryItems[`${multiplier}:${item.id}`]).length+newIngredients.filter(item=>checkedGroceryItems[`new:${multiplier}:${item.name.toLowerCase()}`]).length;
   const structuredSummaryLines=relevantItems.map(item=>{
     const metrics=groceryMetrics(item,multiplier);
     const tag=item.category==="Optional presentation upgrades"?" [optional]":item.category==="Pantry items"?" [pantry]":"";
     const alternative=shortGroceryAlternative(item);
     return `${item.name}${tag} — ${metrics.packages} × ${metrics.option.packageLabel}${alternative?` (${alternative})`:""}`;
   });
-  const manualSummaryLines=manualSelected.flatMap(r=>r.ingredients.map(ingredient=>`${r.name}: ${ingredient} (manual entry${multiplier===2?"; double this amount":""})`));
-  const summaryLines=[...structuredSummaryLines,...manualSummaryLines];
+  const newIngredientSummaryLines=newIngredients.map(item=>`${item.name} — ${formatAmount(item.quantityOz)} oz needed (choose a package size at the store)`);
+  const summaryLines=[...structuredSummaryLines,...newIngredientSummaryLines];
   const eliminated=[
     "Separate half-and-half purchase",
     "Separate chocolate-drizzle product",
@@ -719,9 +835,9 @@ function renderGrocery(multiplier=1){
       <div class="grocery-tools"><button type="button" id="copyGrocerySummary" class="primary">Copy Summary</button><span id="copySummaryStatus" class="copy-status" aria-live="polite"></span></div>
     </section>
     <div class="grocery-tools"><button type="button" id="printGrocery" class="primary">Print Grocery List</button></div>
-    <div class="shopping-progress">${checkedCount} of ${relevantItems.length} grocery items checked off</div>
+    <div class="shopping-progress">${checkedCount} of ${relevantItems.length+newIngredients.length} grocery items checked off</div>
     <div class="note"><strong>Ingredients eliminated through substitutions:</strong> ${eliminated.map(escapeHtml).join("; ")||"None for the selected recipes."}</div>
-    ${manualSelected.length?`<div class="edit-warning"><strong>Custom or edited recipes:</strong> ${manualSelected.map(r=>escapeHtml(r.name)).join(", ")}. Structured quantities only use built-in formulas. Review the manual ingredient lines and adjust purchases as needed.</div>`:""}
+    ${manualSelected.length?`<div class="edit-warning"><strong>Custom or edited recipes:</strong> ${manualSelected.map(r=>escapeHtml(r.name)).join(", ")}. Recognized ingredients now update the package calculations. New ingredients are totaled in ounces below.</div>`:""}
     ${selectedRecipes.length?groceryCategories.map(category=>{
       const items=relevantItems.filter(item=>item.category===category);
       if(!items.length)return "";
@@ -734,11 +850,11 @@ function renderGrocery(multiplier=1){
           <div class="alternative"><strong>Alternative / note:</strong> ${escapeHtml(item.alternative)}</div></article>`;
       }).join("")}</section>`;
     }).join(""):'<div class="note">Select at least one recipe to build the grocery list.</div>'}
-    ${manualSelected.length?`<section class="grocery-category-card"><div class="grocery-category-head"><h3>Custom or edited recipe ingredients</h3><span>Review manually${multiplier===2?" · double amounts":""}</span></div>${manualSelected.map(r=>`<div class="grocery-recipe"><h3>${escapeHtml(r.name)}</h3>${r.ingredients.map((ingredient,index)=>{const key=`custom:${r._index}:${index}`;return `<label class="check-row"><input type="checkbox" class="grocery-item-check" data-check-key="${key}" ${checkedGroceryItems[key]?"checked":""}><span>${escapeHtml(ingredient)}${multiplier===2?" — double this amount":""}</span></label>`}).join("")}</div>`).join("")}</section>`:""}
+    ${newIngredients.length?`<section class="grocery-category-card"><div class="grocery-category-head"><h3>New ingredients to size at the store</h3><span>No package size saved yet</span></div>${newIngredients.map(item=>{const key=`new:${multiplier}:${item.name.toLowerCase()}`;return `<article class="grocery-item-card"><label class="check-row"><input type="checkbox" class="grocery-item-check" data-check-key="${escapeHtml(key)}" ${checkedGroceryItems[key]?"checked":""}><span><strong>${escapeHtml(item.name)}</strong> — ${formatAmount(item.quantityOz)} oz needed</span></label><div class="alternative">Choose any available container or combination of containers that supplies at least ${formatAmount(item.quantityOz)} oz.</div></article>`}).join("")}</section>`:""}
     <div class="note"><strong>Package-size note:</strong> Container sizes vary by store, brand, and availability. Use the listed alternatives when an equivalent size is easier to find.</div>`;
   body.querySelectorAll(".grocery-multiplier").forEach(btn=>btn.addEventListener("click",()=>renderGrocery(Number(btn.dataset.multiplier))));
   body.querySelectorAll(".recipe-selector").forEach(box=>box.addEventListener("change",()=>{const index=Number(box.dataset.recipeIndex);if(box.checked)selectedRecipeIndexes.add(index);else selectedRecipeIndexes.delete(index);persistGroceryState();renderGrocery(multiplier)}));
-  body.querySelectorAll(".grocery-item-check").forEach(box=>box.addEventListener("change",()=>{if(box.checked)checkedGroceryItems[box.dataset.checkKey]=true;else delete checkedGroceryItems[box.dataset.checkKey];persistGroceryState();const progress=body.querySelector(".shopping-progress");if(progress)progress.textContent=`${body.querySelectorAll(".structured-check:checked").length} of ${relevantItems.length} grocery items checked off`}));
+  body.querySelectorAll(".grocery-item-check").forEach(box=>box.addEventListener("change",()=>{if(box.checked)checkedGroceryItems[box.dataset.checkKey]=true;else delete checkedGroceryItems[box.dataset.checkKey];persistGroceryState();const progress=body.querySelector(".shopping-progress");if(progress)progress.textContent=`${body.querySelectorAll(".grocery-item-check:checked").length} of ${relevantItems.length+newIngredients.length} grocery items checked off`}));
   document.getElementById("selectAllRecipes").addEventListener("click",()=>{selectedRecipeIndexes=new Set(recipes.map(r=>r._index));persistGroceryState();renderGrocery(multiplier)});
   document.getElementById("clearAllRecipes").addEventListener("click",()=>{selectedRecipeIndexes.clear();persistGroceryState();renderGrocery(multiplier)});
   document.getElementById("clearCheckedItems").addEventListener("click",()=>{checkedGroceryItems={};persistGroceryState();renderGrocery(multiplier)});
@@ -767,6 +883,49 @@ function closeModal(){
   document.body.style.overflow="";
   if(lastTrigger)lastTrigger.focus();
 }
+function buildUpdatedHtml(){
+  const clone=document.documentElement.cloneNode(true);
+  clone.querySelector("#recipeGrid").innerHTML="";
+  const clonedOverlay=clone.querySelector("#overlay");
+  clonedOverlay.classList.add("hidden");
+  clone.querySelector("#modalCategory").textContent="";
+  clone.querySelector("#modalTitle").textContent="";
+  clone.querySelector("#modalBody").innerHTML="";
+  clone.querySelectorAll(".filter").forEach(button=>button.classList.toggle("active",button.dataset.filter==="all"));
+  clone.querySelector("#updatedDate").setAttribute("value",updatedDate);
+  clone.querySelector("#saveHtmlStatus").textContent="";
+  const script=[...clone.querySelectorAll("script")].find(element=>element.textContent.includes("__EXPORTED_STATE_START__"));
+  const stateJson=JSON.stringify({updatedDate,recipeOverrides,customRecipes}).replace(/</g,"\\u003c");
+  script.textContent=script.textContent.replace(/\/\*__EXPORTED_STATE_START__\*\/[\s\S]*?\/\*__EXPORTED_STATE_END__\*\//,`/*__EXPORTED_STATE_START__*/const EXPORTED_RECIPE_STATE=${stateJson};/*__EXPORTED_STATE_END__*/`);
+  return `<!DOCTYPE html>\n${clone.outerHTML}`;
+}
+async function saveUpdatedHtml(){
+  const status=document.getElementById("saveHtmlStatus");
+  const html=buildUpdatedHtml();
+  try{
+    if("showSaveFilePicker" in window){
+      const handle=await window.showSaveFilePicker({
+        suggestedName:"vacation_ninja_slushi_dashboard_v2.html",
+        types:[{description:"HTML file",accept:{"text/html":[".html"]}}]
+      });
+      const writable=await handle.createWritable();
+      await writable.write(html);
+      await writable.close();
+      status.textContent="HTML file saved";
+    }else{
+      const blob=new Blob([html],{type:"text/html"});
+      const url=URL.createObjectURL(blob);
+      const link=document.createElement("a");
+      link.href=url;
+      link.download="vacation_ninja_slushi_dashboard_v2.html";
+      link.click();
+      URL.revokeObjectURL(url);
+      status.textContent="Updated HTML downloaded";
+    }
+  }catch(error){
+    status.textContent=error?.name==="AbortError"?"Save canceled":"Could not save HTML";
+  }
+}
 document.querySelectorAll(".filter").forEach(btn=>btn.addEventListener("click",()=>{
   document.querySelectorAll(".filter").forEach(b=>b.classList.remove("active"));
   btn.classList.add("active");
@@ -774,6 +933,9 @@ document.querySelectorAll(".filter").forEach(btn=>btn.addEventListener("click",(
 }));
 document.getElementById("safeguardsBtn").addEventListener("click",e=>{lastTrigger=e.currentTarget;openSafeguards()});
 document.getElementById("groceryBtn").addEventListener("click",e=>{lastTrigger=e.currentTarget;openGrocery()});
+document.getElementById("updatedDate").value=updatedDate;
+document.getElementById("updatedDate").addEventListener("change",event=>setUpdatedDate(event.target.value));
+document.getElementById("saveHtmlBtn").addEventListener("click",saveUpdatedHtml);
 document.getElementById("resetEditsBtn").addEventListener("click",()=>{
   if(Object.keys(recipeOverrides).length===0)return;
   if(!confirm("Restore every recipe to the original menu and remove all browser-saved edits?"))return;
