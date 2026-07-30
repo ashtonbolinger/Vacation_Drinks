@@ -166,6 +166,7 @@
 
 <main class="shell">
   <div class="toolbar" aria-label="Recipe categories">
+    <button id="safeguardsBtn" class="secondary">🥷 Ninja Safeguards &amp; Tips</button>
     <button class="active filter" data-filter="all">All Recipes</button>
     <button class="filter" data-filter="coffee">☕ Coffee</button>
     <button class="filter" data-filter="slush">🍓 Fruit Slush</button>
@@ -451,6 +452,38 @@ function render(filter="all"){
     openRecipe(recipes.find(r=>r._index===Number(btn.dataset.index)));
   }));
 }
+function openSafeguards(){
+  cat.textContent="🥷 Use the SLUSHi safely";
+  title.textContent="Ninja Safeguards & Tips";
+  body.innerHTML=`
+    <div class="note"><strong>Start here:</strong> The machine has an 88-ounce vessel, but the working MAX FILL line is 64 ounces. Never exceed that line, even when a recipe is labeled as a 64-ounce batch.</div>
+    <div class="recipe-grid">
+      <section>
+        <h4>Before running the machine</h4>
+        <ul>
+          <li>Chill the complete liquid base thoroughly before adding it.</li>
+          <li>Never add hot or warm liquid to the machine.</li>
+          <li>Fully dissolve sugar, syrups, cocoa, pudding or mousse mix, marshmallow products, and nut spreads. Warm a small portion of liquid to help them dissolve, then cool the entire mixture completely.</li>
+          <li>Blend homemade fruit bases completely smooth and strain out seeds, pulp, skins, and chunks.</li>
+          <li>Use smooth, pourable mixtures only. Gently reduce excess carbonation in fizzy mixers before pouring them into the vessel.</li>
+        </ul>
+      </section>
+      <section>
+        <h4>Capacity, solids, and alcohol</h4>
+        <ul>
+          <li>Keep every liquid batch at or below the 64-ounce MAX FILL line. Toppings are not included in the listed liquid batch size.</li>
+          <li>Never put cookie dough, brownies, graham crackers, coconut flakes, fruit chunks, marshmallows, candy, or other solids into the machine.</li>
+          <li>Add whipped cream, drizzle, crumbs, fruit, and all other solid toppings only after dispensing.</li>
+          <li>Excess alcohol can prevent freezing. Do not increase the listed alcohol amount, and preserve the recipe's water, juice, or mixer dilution.</li>
+          <li>If a mixture does not freeze properly, check temperature, sugar balance, alcohol level, and dilution before rerunning it.</li>
+        </ul>
+      </section>
+    </div>
+    <div class="note"><strong>Best results:</strong> Follow the preset named in the recipe, dispense promptly when ready, and rinse the vessel and dispensing parts soon after use. Keep the Ninja owner's guide available for model-specific operating and cleaning instructions.</div>`;
+  overlay.classList.remove("hidden");
+  document.body.style.overflow="hidden";
+  document.getElementById("closeBtn").focus();
+}
 function openRecipe(r){
   cat.textContent=labels[r.category];
   title.textContent=r.name;
@@ -461,8 +494,6 @@ function openRecipe(r){
       <section><h4>Method</h4><ol>${r.steps.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ol></section>
     </div>
     ${r.toppings?.length?`<section><h4>Add only after dispensing</h4><ul>${r.toppings.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ul></section>`:""}
-    <div class="note"><strong>SLUSHi safeguards:</strong> Chill the complete liquid base before adding it. Fully dissolve sugar, syrups, nut spreads, pudding mix, cocoa, and marshmallow products. Blend homemade fruit bases completely smooth and strain seeds, pulp, and chunks. Never put cookie dough, brownies, graham crackers, coconut flakes, fruit chunks, or marshmallows into the machine. Keep every batch at or below the 64 oz MAX FILL line.${r.category==="cocktail"?" Excess alcohol can prevent freezing; preserve the listed alcohol and dilution amounts.":""}</div>
-    <div class="note"><strong>Why it made the menu:</strong> ${escapeHtml(r.note)}</div>
     ${recipeOverrides[r._index]?'<div class="edit-warning">This recipe has saved browser edits. The grocery list is not recalculated automatically.</div>':""}
     <div class="modal-actions">
       <button type="button" class="primary edit-recipe">Edit Recipe</button>
@@ -496,7 +527,6 @@ function openRecipeEditor(index){
       <label class="wide">Ingredients — one per line<textarea id="editIngredients" required>${escapeHtml(r.ingredients.join("\n"))}</textarea></label>
       <label class="wide">Toppings / solids — one per line, added only after dispensing<textarea id="editToppings">${escapeHtml((r.toppings||[]).join("\n"))}</textarea></label>
       <label class="wide">Instructions — one step per line<textarea id="editSteps" required>${escapeHtml(r.steps.join("\n"))}</textarea></label>
-      <label class="wide">Menu note<textarea id="editNote">${escapeHtml(r.note)}</textarea></label>
       <div class="wide modal-actions">
         <button type="submit" class="primary">Save Changes</button>
         <button type="button" id="cancelEdit">Cancel</button>
@@ -513,8 +543,7 @@ function openRecipeEditor(index){
       overlap:document.getElementById("editOverlap").value.trim(),
       ingredients:document.getElementById("editIngredients").value.split("\n").map(x=>x.trim()).filter(Boolean),
       toppings:document.getElementById("editToppings").value.split("\n").map(x=>x.trim()).filter(Boolean),
-      steps:document.getElementById("editSteps").value.split("\n").map(x=>x.trim()).filter(Boolean),
-      note:document.getElementById("editNote").value.trim()
+      steps:document.getElementById("editSteps").value.split("\n").map(x=>x.trim()).filter(Boolean)
     };
     clearGroceryChecksForRecipe(index);
     persistRecipeOverrides();
@@ -637,6 +666,7 @@ document.querySelectorAll(".filter").forEach(btn=>btn.addEventListener("click",(
   btn.classList.add("active");
   render(btn.dataset.filter);
 }));
+document.getElementById("safeguardsBtn").addEventListener("click",e=>{lastTrigger=e.currentTarget;openSafeguards()});
 document.getElementById("groceryBtn").addEventListener("click",e=>{lastTrigger=e.currentTarget;openGrocery()});
 document.getElementById("resetEditsBtn").addEventListener("click",()=>{
   if(Object.keys(recipeOverrides).length===0)return;
