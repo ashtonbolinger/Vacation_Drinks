@@ -764,14 +764,15 @@ function updateAlcoholCalculator(profile){
   const maximum=Math.min(profile.batchOz,totalAbvMaximum,hardSpiritMaximum);
   const target=Math.min(uncappedTarget,maximum);
   const drinkAbv=target*(bottleAbv/100)/profile.batchOz*100;
+  const maxDrinkAbv=maximum*(bottleAbv/100)/profile.batchOz*100;
   const capped=uncappedTarget>maximum+.049;
-  const maxLabel=maximum>=profile.batchOz-.049?`${formatAmount(profile.batchOz)} oz by the alcohol rule; flavor balance is the practical limit`:`${formatAmount(maximum)} oz`;
+  const maxLabel=maximum>=profile.batchOz-.049?`${formatAmount(profile.batchOz)} oz, flavor balance is the practical limit`:`${formatAmount(maximum)} oz`;
   const adjusted=adjustedMachineIngredients(profile,target);
   results.innerHTML=`<div class="freeze-results">
-    <div class="freeze-result"><strong>Recommended ${escapeHtml(profile.name)}</strong>${formatAmount(target)} oz</div>
-    <div class="freeze-result"><strong>Finished batch</strong>${formatAmount(profile.batchOz)} oz</div>
-    <div class="freeze-result"><strong>Ninja-based maximum</strong>${maxLabel}</div>
-    <div class="freeze-result"><strong>Estimated finished ABV</strong>${formatAmount(drinkAbv)}% ABV</div>
+    <div class="freeze-result"><strong>Recommended alcohol</strong>${formatAmount(target)} oz ${escapeHtml(profile.name)}</div>
+    <div class="freeze-result"><strong>Recommended mixed ABV</strong>${formatAmount(drinkAbv)}% ABV</div>
+    <div class="freeze-result"><strong>Max alcohol to freeze</strong>${maxLabel}</div>
+    <div class="freeze-result"><strong>Max mixed ABV</strong>${formatAmount(maxDrinkAbv)}% ABV</div>
   </div>
   ${capped?`<p class="freeze-warning">The equivalent-strength target would be ${formatAmount(uncappedTarget)} oz, so the recommendation was capped at the Ninja-based maximum. Expect a slightly lower finished-drink ABV.</p>`:""}
   <p class="alternative">This preserves the recipe's intended alcohol strength. Water is adjusted first; if water cannot absorb the full difference, the largest mixer is adjusted next. The maximum also applies Ninja's 16% finished-drink ceiling and, at 35% bottle ABV or higher, the 4-oz-spirit-per-24-oz-recipe guideline. Very sweet mixers may still need additional unsweetened dilution.</p>`;
