@@ -1,8 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vacation Ninja SLUSHi Menu</title>
 <style>
   :root{
@@ -170,7 +169,7 @@
   }
 </style>
 </head>
-<body>
+<body data-new-gr-c-s-check-loaded="14.1315.0" data-gr-ext-installed="" style="">
 <header>
   <div style="font-size:2rem">🏖️🍹🌴</div>
   <h1>Vacation Ninja SLUSHi Menu</h1>
@@ -180,13 +179,13 @@
 <main class="shell">
   <div class="toolbar" aria-label="Recipe categories">
     <button id="safeguardsBtn" class="secondary">🥷 Ninja Safeguards &amp; Tips</button>
-    <button class="active filter" data-filter="all">All Recipes</button>
+    <button class="filter active" data-filter="all">All Recipes</button>
     <button class="filter" data-filter="coffee">☕ Coffee</button>
     <button class="filter" data-filter="slush">🍓 Fruit Slush</button>
     <button class="filter" data-filter="shake">🍦 Milkshake</button>
     <button class="filter" data-filter="cocktail">🍹 Cocktails</button>
     <button id="groceryBtn" class="secondary">🛒 Full Grocery List</button>
-    <button id="resetEditsBtn" type="button">Reset Saved Edits</button>
+    <button id="resetEditsBtn" type="button" disabled="">Reset Saved Edits</button>
   </div>
 
   <section class="stats">
@@ -200,7 +199,7 @@
 <footer>
   <p>Built for Sunday through Friday vacation service. Each recipe shows its estimated batch yield. Pre-chill every base and never exceed the machine’s 64-ounce max-fill line.</p>
   <div class="update-tools">
-    <label>Page updated<input id="updatedDate" type="date"></label>
+    <label>Page updated<input id="updatedDate" type="date" value="2026-07-30"></label>
     <button id="saveHtmlBtn" type="button" class="primary">Save Updated HTML</button>
     <span id="saveHtmlStatus" class="update-status" aria-live="polite"></span>
   </div>
@@ -221,134 +220,134 @@
 </div>
 
 <script>
-/*__EXPORTED_STATE_START__*/const EXPORTED_RECIPE_STATE=null;/*__EXPORTED_STATE_END__*/
+/*__EXPORTED_STATE_START__*/const EXPORTED_RECIPE_STATE={"updatedDate":"2026-07-30","recipeOverrides":{},"customRecipes":[]};/*__EXPORTED_STATE_END__*/
 const defaultRecipes = [
   {
-    name:"Mocha Frappé", category:"coffee", votes:3, overlap:"Coffee + chocolate + milk",
+    name:"Mocha Frappé", category:"coffee", votes:3, overlap:"Cool, creamy coffeehouse decadence",
     ingredients:["42 oz chilled cold brew","16 oz chocolate milk","4 oz chocolate syrup","1 oz whole milk","1 oz heavy cream"],
     steps:["Whisk all ingredients together until uniform.","Pour into the machine without ice.","Select the frappé setting and adjust thickness as needed."],
     note:"Highest-voted coffee and a strong ingredient-sharing choice."
   },
   {
-    name:"Peanut Butter Mocha", category:"coffee", votes:2, overlap:"Shares mocha base",
+    name:"Peanut Butter Mocha", category:"coffee", votes:2, overlap:"Chocolate-peanut butter bliss",
     ingredients:["40 oz chilled cold brew","16 oz chocolate milk","4 oz chocolate syrup","4 oz smooth peanut butter blend (whisk smooth peanut butter with warm milk or water to 4 oz total, then cool completely)"],
     steps:["Blend the peanut butter with a small amount of warm milk or water until completely smooth, whisk in the chocolate syrup, then cool completely.","Combine with the remaining chilled ingredients. Do not put thick, unmixed peanut butter into the machine.","Run on the frappé setting."],
     note:"Smooth peanut butter replaces specialty peanut butter syrup without materially changing the chocolate-peanut flavor."
   },
   {
-    name:"Salted Caramel Latte", category:"coffee", votes:2, overlap:"Coffee + milk",
+    name:"Salted Caramel Latte", category:"coffee", votes:2, overlap:"Sweet, salty, silky perfection",
     ingredients:["42 oz chilled cold brew","16 oz whole milk","6 oz caramel syrup","1/4 teaspoon fine salt"],
     steps:["Whisk thoroughly until the salt dissolves.","Taste and add a little more caramel if desired.","Run on the frappé setting."],
     note:"Caramel is the only specialty ingredient."
   },
   {
-    name:"S’mores Frappé", category:"coffee", votes:2, overlap:"Coffee + chocolate + marshmallow",
+    name:"S’mores Frappé", category:"coffee", votes:2, overlap:"Campfire nostalgia, deliciously frozen",
     ingredients:["38 oz chilled cold brew","16 oz chocolate milk","4 oz chocolate syrup","6 oz cooled marshmallow blend (marshmallow crème dissolved in warm milk, then chilled)"],
     toppings:["Crushed graham crackers, added only after dispensing"],
     steps:["Blend marshmallow crème into a small amount of warm milk until completely smooth, then cool completely.","Whisk with the remaining chilled liquid ingredients and run on the frappé setting.","Top individual servings with graham crumbs only after dispensing."],
     note:"Marshmallow crème replaces specialty toasted-marshmallow syrup; bottled syrup remains a convenience option."
   },
   {
-    name:"Nutella Frappé", category:"coffee", votes:2, overlap:"Coffee + Nutella + cream", yield:"About 3 servings (8 oz each)", batch:"About 24 oz",
+    name:"Nutella Frappé", category:"coffee", votes:2, overlap:"Hazelnut-chocolate café indulgence", yield:"About 3 servings (8 oz each)", batch:"About 24 oz",
     ingredients:["500 mL whole milk (about 2 cups or 17 oz)","4 heaping tablespoons Nutella, warmed slightly so it dissolves smoothly","2 shots cooled espresso or 1/2 cup (4 oz) cooled strong brewed coffee","1/4 cup (2 oz) heavy cream"],
     toppings:["Whipped cream and an extra Nutella drizzle, added only after dispensing (optional)"],
     steps:["In a separate bowl, whisk the slightly warmed Nutella, milk, cooled coffee, and heavy cream until completely smooth and well combined.","Pour the chilled mixture directly into the Ninja SLUSHi chamber, keeping it below the max-fill line.","Select the Frappé preset. If a thicker result is preferred, use the Milkshake preset or increase the temperature level.","Dispense into glasses and top with whipped cream and an extra Nutella drizzle."],
     note:"Real Nutella and cream produce a richer, more authentic hazelnut-chocolate frappé. Make sure the Nutella is completely dissolved before it enters the machine."
   },
   {
-    name:"Peach Mango Slush", category:"slush", votes:4, overlap:"Peach hub",
+    name:"Peach Mango Slush", category:"slush", votes:4, overlap:"Sunshine in every sip",
     ingredients:["32 oz peach nectar","30 oz mango nectar or mango juice","2 oz lemon juice"],
     steps:["Stir all ingredients together and chill completely.","Pour into the machine and select slush.","Adjust with a little additional nectar if needed."],
     note:"Tied for the highest vote total in its category."
   },
   {
-    name:"Arnold Palmer Slush", category:"slush", votes:4, overlap:"Lemonade + tea",
+    name:"Arnold Palmer Slush", category:"slush", votes:4, overlap:"Porch-sipping classic, perfectly frozen",
     ingredients:["32 oz sweet tea","32 oz lemonade"],
     steps:["Combine chilled tea and lemonade.","Run on the slush setting.","Serve with lemon wedges if desired."],
     note:"Very inexpensive and uses lemonade needed elsewhere."
   },
   {
-    name:"Orange Creamsicle Slush", category:"slush", votes:3, overlap:"Orange + vanilla dairy",
+    name:"Orange Creamsicle Slush", category:"slush", votes:3, overlap:"Citrus sunshine meets vanilla",
     ingredients:["50 oz orange juice","14 oz vanilla coffee creamer"],
     steps:["Whisk until completely blended.","Run on the slush setting.","Add a splash of orange juice if the mixture becomes too thick."],
     note:"Shares orange juice and vanilla dairy with the shake version."
   },
   {
-    name:"Strawberry Lemonade", category:"slush", votes:2, overlap:"Lemonade + strawberries",
+    name:"Strawberry Lemonade", category:"slush", votes:2, overlap:"Bright, berry-kissed refreshment",
     ingredients:["46 oz lemonade","18 oz strawberry purée or strawberry nectar"],
     steps:["Combine and chill completely.","Run on the slush setting.","Serve with sliced strawberries if available."],
     note:"Uses lemonade already purchased for Arnold Palmers."
   },
   {
-    name:"Tropical Punch Slush", category:"slush", votes:3, overlap:"Tropical punch + pineapple + lime",
+    name:"Tropical Punch Slush", category:"slush", votes:3, overlap:"A vacation party in a glass",
     ingredients:["48 oz tropical fruit punch","12 oz pineapple juice","4 oz lime juice"],
     steps:["Combine all ingredients and chill thoroughly.","Run on the slush setting.","Taste after freezing and add a small splash of punch if a thinner texture is desired."],
     note:"A bright, family-friendly slush that shares pineapple and lime ingredients with the cocktail menu."
   },
   {
-    name:"Mango Passionfruit Slush", category:"slush", votes:3, overlap:"Mango + passionfruit",
+    name:"Mango Passionfruit Slush", category:"slush", votes:3, overlap:"Bold tropical tang and sunshine",
     ingredients:["36 oz mango nectar","26 oz passionfruit juice cocktail","2 oz lime juice"],
     steps:["Stir the chilled juices together.","Run on the slush setting.","Adjust with a little mango nectar if a sweeter finish is desired."],
     note:"Uses nectar and sweetened juice cocktail so the base has enough sugar to freeze properly."
   },
   {
-    name:"Chocolate Marshmallow Shake", category:"shake", votes:3, overlap:"Chocolate + marshmallow",
+    name:"Chocolate Marshmallow Shake", category:"shake", votes:3, overlap:"A fluffy chocolate cloud",
     ingredients:["42 oz chocolate milk","16 oz whole milk","6 oz cooled marshmallow blend (marshmallow crème dissolved in warm milk, then chilled)"],
     steps:["Blend marshmallow crème into a small amount of warm milk until completely smooth, then cool completely.","Whisk with the remaining chilled ingredients.","Run on the milkshake setting."],
     note:"Top write-in and excellent overlap with S’mores Frappé."
   },
   {
-    name:"Chocolate Chip Cookie Dough Shake", category:"shake", votes:3, overlap:"Chocolate dairy base",
+    name:"Chocolate Chip Cookie Dough Shake", category:"shake", votes:3, overlap:"Dessert-shop mischief in a glass",
     ingredients:["40 oz chocolate milk","20 oz whole milk","4 oz chocolate syrup"],
     toppings:["Edible cookie-dough pieces, stirred into individual servings only after dispensing"],
     steps:["Combine the liquids and run on the milkshake setting.","Stir small cookie-dough pieces into individual servings after dispensing.","Do not put large chunks through the machine."],
     note:"Use commercially prepared edible cookie dough."
   },
   {
-    name:"Classic Chocolate Shake", category:"shake", votes:3, overlap:"Core chocolate base",
+    name:"Classic Chocolate Shake", category:"shake", votes:3, overlap:"Timeless, rich, and frosty",
     ingredients:["44 oz chocolate milk","16 oz whole milk","4 oz chocolate syrup"],
     steps:["Whisk together and chill thoroughly.","Run on the milkshake setting.","Top with whipped cream if desired."],
     note:"The simplest and most grocery-efficient shake."
   },
   {
-    name:"Orange Creamsicle Shake", category:"shake", votes:3, overlap:"Orange + vanilla dairy",
+    name:"Orange Creamsicle Shake", category:"shake", votes:3, overlap:"Childhood nostalgia, extra creamy",
     ingredients:["42 oz orange juice","18 oz vanilla coffee creamer","4 oz whole milk"],
     steps:["Whisk together until uniform.","Run on the milkshake setting.","Serve immediately."],
     note:"Pairs directly with the Orange Creamsicle Slush."
   },
   {
-    name:"Brownie Batter Shake", category:"shake", votes:3, overlap:"Chocolate dairy base",
+    name:"Brownie Batter Shake", category:"shake", votes:3, overlap:"Fudgy, spoon-licking decadence",
     ingredients:["48 oz whole milk","8 oz heavy cream","1 packet chocolate mousse mix or instant chocolate pudding mix (about 3.9 oz)","1/2 cup granulated sugar, adding up to 1 cup total for a sweeter batter flavor","Up to 8 oz additional whole milk, added after mixing to bring the finished base to 64 oz"],
     toppings:["Whipped cream and crumbled brownies or Cosmic Brownies, added only after dispensing (optional)"],
     steps:["Whisk 48 oz milk, the heavy cream, pudding or mousse mix, and 1/2 cup sugar until completely smooth and no dry pockets remain.","Taste and add more sugar only if desired, then add enough milk to bring the fully mixed base to exactly 64 oz. Chill thoroughly.","Run on the milkshake setting. Add whipped cream and brownie crumbles only after dispensing."],
     note:"Pudding or mousse mix creates a thick, fudgy brownie-batter texture. Measuring the finished base to 64 oz prevents the dissolved dry ingredients from pushing the batch over the max-fill line."
   },
   {
-    name:"Classic Margarita", category:"cocktail", votes:4, overlap:"Lime + citrus",
+    name:"Classic Margarita", category:"cocktail", votes:4, overlap:"Zesty, icy, and fiesta-ready",
     ingredients:["40 oz margarita mix","10 oz tequila","14 oz cold water"],
     steps:["Mix and chill thoroughly.","Run on the spiked-slush setting.","If it remains too loose, add 4 oz water, wait 30 minutes, and reassess."],
     note:"Keep the total alcohol level within the Ninja machine’s published limit."
   },
   {
-    name:"Peach Bellini", category:"cocktail", votes:4, overlap:"Peach hub",
+    name:"Peach Bellini", category:"cocktail", votes:4, overlap:"Bubbly orchard elegance",
     ingredients:["31 oz peach nectar or purée","25 oz chilled prosecco","8 oz cold water"],
     steps:["Stir gently to preserve some carbonation.","Run on the spiked-slush setting.","Serve promptly."],
     note:"Shares peach ingredients with Peach Mango Slush."
   },
   {
-    name:"Whiskey Sour Slush", category:"cocktail", votes:3, overlap:"Lemon hub",
+    name:"Whiskey Sour Slush", category:"cocktail", votes:3, overlap:"Bold whiskey with a citrus snap",
     ingredients:["34 oz lemonade","10 oz whiskey","14 oz cold water","6 oz simple syrup"],
     steps:["Combine and chill thoroughly.","Run on the spiked-slush setting.","Taste before serving and adjust sweetness with simple syrup."],
     note:"Best-performing write-in and shares lemonade with two other drinks."
   },
   {
-    name:"Kentucky Mule Slush", category:"cocktail", votes:3, overlap:"Bourbon + ginger + lime",
+    name:"Kentucky Mule Slush", category:"cocktail", votes:3, overlap:"Bourbon kick, ginger sparkle",
     ingredients:["42 oz ginger beer","10 oz bourbon or whiskey","10 oz cold water","2 oz lime juice"],
     steps:["Stir the ginger beer gently until most of the carbonation subsides.","Combine with the remaining chilled ingredients and run on the spiked-slush setting.","Serve with lime wedges and fresh mint if desired."],
     note:"Bourbon turns the classic mule into a Kentucky Mule while staying within Ninja’s hard-spirit guideline for a 64-ounce batch."
   },
   {
-    name:"Piña Colada", category:"cocktail", votes:4, overlap:"Pineapple + tropical",
+    name:"Piña Colada", category:"cocktail", votes:4, overlap:"A creamy island escape",
     ingredients:["30 oz pineapple juice","16 oz cream of coconut","10 oz white rum","8 oz cold water"],
     steps:["Whisk the cream of coconut with a portion of the pineapple juice until smooth.","Add the remaining chilled ingredients and run on the spiked-slush setting.","If the mixture is too loose, add 4 oz water, wait 30 minutes, and reassess."],
     note:"The rum quantity stays within Ninja’s hard-spirit guideline for a 64-ounce batch."
@@ -576,7 +575,7 @@ function render(filter="all"){
       </div>
       <h3>${escapeHtml(r.name)}</h3>
       <div class="ingredients"><strong>Estimated yield:</strong> ${escapeHtml(r.yield||"8 servings (8 oz each)")}</div>
-      <div class="ingredients"><strong>Ingredient overlap:</strong> ${escapeHtml(r.overlap)}</div>
+      <div class="ingredients"><strong>The vibe:</strong> ${escapeHtml(r.overlap)}</div>
       <button type="button" data-index="${r._index}" aria-label="View recipe for ${escapeHtml(r.name)}">View Recipe</button>`;
     grid.appendChild(card);
   });
@@ -688,7 +687,7 @@ function openRecipeEditor(index){
       <label>Category<select id="editCategory">${Object.keys(labels).map(value=>`<option value="${value}" ${r.category===value?"selected":""}>${labels[value]}</option>`).join("")}</select></label>
       <label>Estimated yield<input id="editYield" value="${escapeHtml(r.yield||"8 servings (8 oz each)")}"></label>
       <label>Batch size<input id="editBatch" value="${escapeHtml(r.batch||"64 oz")}"></label>
-      <label class="wide">Ingredient overlap<input id="editOverlap" value="${escapeHtml(r.overlap)}"></label>
+      <label class="wide">Short recipe description<input id="editOverlap" value="${escapeHtml(r.overlap)}" placeholder="A few fun, enticing words"></label>
       <div class="wide"><strong>Machine ingredients</strong><div class="alternative">Enter the quantity in ounces separately from the ingredient name.</div><div id="ingredientRows" class="ingredient-editor">${ingredientRowsHtml(r.ingredients)}</div><button type="button" id="addIngredientRow" class="add-ingredient-row">＋ Add Ingredient</button></div>
       <label class="wide">Toppings / solids — one per line, added only after dispensing<textarea id="editToppings">${escapeHtml((r.toppings||[]).join("\n"))}</textarea></label>
       <label class="wide">Instructions — one step per line<textarea id="editSteps" required>${escapeHtml(r.steps.join("\n"))}</textarea></label>
@@ -746,7 +745,7 @@ function openRecipeCreator(defaultCategory="coffee"){
       <label>Category<select id="editCategory">${Object.keys(labels).map(value=>`<option value="${value}" ${category===value?"selected":""}>${labels[value]}</option>`).join("")}</select></label>
       <label>Estimated yield<input id="editYield" value="8 servings (8 oz each)"></label>
       <label>Batch size<input id="editBatch" value="64 oz"></label>
-      <label class="wide">Ingredient overlap<input id="editOverlap" placeholder="Ingredients shared with other recipes"></label>
+      <label class="wide">Short recipe description<input id="editOverlap" placeholder="A few fun, enticing words"></label>
       <div class="wide"><strong>Machine ingredients</strong><div class="alternative">Enter the quantity in ounces separately from the ingredient name.</div><div id="ingredientRows" class="ingredient-editor"><div class="ingredient-row"><input class="ingredient-oz" type="number" min="0.01" step="0.01" required aria-label="Quantity in ounces" placeholder="Ounces"><input class="ingredient-name" required aria-label="Ingredient name" placeholder="Ingredient"><button type="button" class="remove-ingredient">Remove</button></div></div><button type="button" id="addIngredientRow" class="add-ingredient-row">＋ Add Ingredient</button></div>
       <label class="wide">Toppings / solids — one per line, added only after dispensing<textarea id="editToppings" placeholder="Optional toppings"></textarea></label>
       <label class="wide">Instructions — one step per line<textarea id="editSteps" required placeholder="Example: Whisk the chilled ingredients together."></textarea></label>
@@ -766,7 +765,7 @@ function openRecipeCreator(defaultCategory="coffee"){
       votes:0,
       yield:document.getElementById("editYield").value.trim(),
       batch:document.getElementById("editBatch").value.trim(),
-      overlap:document.getElementById("editOverlap").value.trim()||"Custom recipe",
+      overlap:document.getElementById("editOverlap").value.trim()||"A new vacation favorite",
       ingredients:collectIngredientRows(),
       toppings:document.getElementById("editToppings").value.split("\n").map(x=>x.trim()).filter(Boolean),
       steps:document.getElementById("editSteps").value.split("\n").map(x=>x.trim()).filter(Boolean)
@@ -954,5 +953,6 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!overlay.classList.
 refreshRecipes();
 render();
 </script>
-</body>
-</html>
+
+
+</body><grammarly-desktop-integration data-grammarly-shadow-root="true" style="visibility: visible !important;"></grammarly-desktop-integration></html>
