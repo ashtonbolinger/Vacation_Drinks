@@ -539,16 +539,24 @@ function openRecipe(r){
     openRecipe(recipes.find(item=>item._index===r._index));
   });
   const deleteButton=body.querySelector(".delete-recipe");
-  if(deleteButton)deleteButton.addEventListener("click",()=>{
-    if(!confirm(`Delete the custom recipe “${r.name}” from this browser?`))return;
-    customRecipes=customRecipes.filter(item=>item.id!==r._index);
-    selectedRecipeIndexes.delete(r._index);
-    clearGroceryChecksForRecipe(r._index);
-    persistCustomRecipes();
-    persistGroceryState();
-    render(activeFilter());
-    closeModal();
-  });
+  if(deleteButton){
+    let deleteArmed=false;
+    deleteButton.addEventListener("click",()=>{
+      if(!deleteArmed){
+        deleteArmed=true;
+        deleteButton.textContent="Confirm Delete";
+        deleteButton.classList.add("secondary");
+        return;
+      }
+      customRecipes=customRecipes.filter(item=>item.id!==r._index);
+      selectedRecipeIndexes.delete(r._index);
+      clearGroceryChecksForRecipe(r._index);
+      persistCustomRecipes();
+      persistGroceryState();
+      render(activeFilter());
+      closeModal();
+    });
+  }
   overlay.classList.remove("hidden");
   document.body.style.overflow="hidden";
   document.getElementById("closeBtn").focus();
