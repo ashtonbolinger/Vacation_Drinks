@@ -114,6 +114,16 @@
   .ingredient-row button,.add-ingredient-row{border-radius:10px;box-shadow:none;border:1px solid var(--line);padding:9px 12px}
   .ingredient-row button{color:#9f2f25;background:#fff0ec}
   .edit-warning{margin:12px 0;padding:11px 12px;border-radius:12px;background:#fff0ec;color:#8a352b}
+  .freeze-calculator{margin:14px 0 18px;padding:15px;border:2px solid rgba(8,127,140,.24);border-radius:16px;background:#eef8fa}
+  .freeze-calculator h3{margin:0 0 5px;color:var(--ocean)}
+  .freeze-input{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin:12px 0}
+  .freeze-input label{display:flex;flex-direction:column;gap:5px;font-weight:750;color:var(--deep)}
+  .freeze-input input{width:150px;border:1px solid var(--line);border-radius:11px;padding:10px 12px;font:inherit;color:var(--ink);background:white}
+  .freeze-results{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+  .freeze-result{padding:10px;border-radius:12px;background:white;border:1px solid var(--line)}
+  .freeze-result strong{display:block;color:var(--deep);font-size:.8rem;margin-bottom:3px}
+  .freeze-adjustment{margin:10px 0 0;font-weight:700;color:var(--deep)}
+  .freeze-warning{margin:8px 0 0;color:#8a352b;font-weight:700}
   .recipe-picker{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 18px}
   .check-row{display:flex;align-items:flex-start;gap:9px;padding:9px 10px;border:1px solid var(--line);border-radius:11px;background:#fff}
   .check-row input{margin-top:3px;accent-color:var(--ocean);width:17px;height:17px;flex:0 0 auto}
@@ -155,6 +165,7 @@
     .editor-grid .wide{grid-column:auto}
     .ingredient-row{grid-template-columns:100px 1fr}
     .ingredient-row button{grid-column:1/-1}
+    .freeze-results{grid-template-columns:1fr}
     .recipe-picker,.selected-grocery{grid-template-columns:1fr}
     .grocery-metrics{grid-template-columns:1fr}
   }
@@ -618,21 +629,110 @@ function openSafeguards(){
           <li>Keep every liquid batch at or below the 64-ounce MAX FILL line. Toppings are not included in the listed liquid batch size.</li>
           <li>Never put cookie dough, brownies, graham crackers, coconut flakes, fruit chunks, marshmallows, candy, or other solids into the machine.</li>
           <li>Add whipped cream, drizzle, crumbs, fruit, and all other solid toppings only after dispensing.</li>
-          <li>Excess alcohol can prevent freezing. Do not increase the listed alcohol amount, and preserve the recipe's water, juice, or mixer dilution.</li>
-          <li>If a mixture does not freeze properly, check temperature, sugar balance, alcohol level, and dilution before rerunning it.</li>
+          <li>Ninja's published range for a finished alcoholic slush is 2.8% to 16% ABV. For spirits at 35% ABV or higher, Ninja recommends no more than 4 ounces per 24 ounces of finished recipe.</li>
+          <li>Use the calculator at the top of each cocktail recipe when the bottle ABV differs from the recipe default. The maximum is a ceiling, not a target.</li>
+        </ul>
+      </section>
+      <section>
+        <h4>If a cocktail is too thin or will not freeze</h4>
+        <ol>
+          <li>Start with the Spiked Slush preset at temperature level 9.</li>
+          <li>If it is still thin after 1 hour, increase to level 10 and allow another 30 minutes.</li>
+          <li>If alcohol is too high, dispense some liquid if necessary, then add 2 ounces of water, soda, seltzer, or a compatible mixer per 8-ounce serving. Wait 30 minutes and repeat if needed.</li>
+          <li>If the mixture is very sweet, dilute in small steps with an unsweetened compatible liquid. Sugar varies by brand, so check mixer nutrition labels.</li>
+          <li>If both sugar and alcohol are high, an unsweetened nonalcoholic diluent lowers both concentrations. Never exceed the MAX FILL line while correcting the batch.</li>
+        </ol>
+      </section>
+      <section>
+        <h4>If it is too frozen or too low in sugar</h4>
+        <ul>
+          <li>If the drink becomes too frozen, add 4 ounces of compatible liquid while processing and lower the temperature by 2 levels.</li>
+          <li>Low/no-sugar mixers may be used for spiked slushes because alcohol also lowers the freezing point.</li>
+          <li>For a nonalcoholic sugar-free base, Ninja Test Kitchen recipes use liquid allulose at about 3 tablespoons per 24 ounces, or 1/2 cup per 64 ounces.</li>
+          <li>Do not use only zero-sugar liquid in a nonalcoholic recipe without a Ninja-compatible freezing aid such as the recommended allulose ratio.</li>
         </ul>
       </section>
     </div>
-    <div class="note"><strong>Best results:</strong> Follow the preset named in the recipe, dispense promptly when ready, and rinse the vessel and dispensing parts soon after use. Keep the Ninja owner's guide available for model-specific operating and cleaning instructions.</div>`;
+    <div class="note"><strong>Best results:</strong> Follow the preset named in the recipe, dispense promptly when ready, and rinse the vessel and dispensing parts soon after use. Alcohol calculations assume the batch size shown and one primary alcoholic ingredient. Sugar balance remains brand-dependent, so treat the calculator maximum as a machine limit rather than a promise that every very-sweet mix will freeze.</div>`;
   overlay.classList.remove("hidden");
   document.body.style.overflow="hidden";
   document.getElementById("closeBtn").focus();
 }
+const builtInAlcoholProfiles={
+  "Classic Margarita":{name:"tequila",volumeOz:10,defaultAbv:40},
+  "Peach Bellini":{name:"prosecco",volumeOz:25,defaultAbv:11.5},
+  "Whiskey Sour Slush":{name:"whiskey",volumeOz:10,defaultAbv:40},
+  "Kentucky Mule Slush":{name:"bourbon or whiskey",volumeOz:10,defaultAbv:40},
+  "Piña Colada":{name:"white rum",volumeOz:10,defaultAbv:40}
+};
+const alcoholNamePattern=/\b(tequila|whiskey|whisky|bourbon|rum|vodka|gin|brandy|prosecco|champagne|wine|liqueur|beer|hard seltzer)\b/i;
+function inferredAlcoholAbv(name){
+  const value=String(name).toLowerCase();
+  if(/prosecco|champagne|wine/.test(value))return 11.5;
+  if(/beer|hard seltzer/.test(value))return 5;
+  if(/liqueur/.test(value))return 20;
+  return 40;
+}
+function alcoholProfileForRecipe(r){
+  if(r.category!=="cocktail")return null;
+  const preset=builtInAlcoholProfiles[r.name];
+  const found=normalizeIngredients(r.ingredients).find(item=>alcoholNamePattern.test(item.name));
+  if(!preset&&!found)return null;
+  return {
+    name:found?.name||preset.name,
+    volumeOz:found?.quantityOz||preset.volumeOz,
+    defaultAbv:preset?.defaultAbv||inferredAlcoholAbv(found.name),
+    batchOz:Number.parseFloat(String(r.batch||"64 oz").match(/[\d.]+/)?.[0])||64
+  };
+}
+function alcoholCalculatorHtml(profile){
+  if(!profile)return "";
+  return `<section class="freeze-calculator" aria-label="Cocktail alcohol calculator">
+    <h3>🍸 Cocktail Freeze Calculator</h3>
+    <div class="alternative">Enter the ABV printed on the bottle. Leave it blank to use this recipe's ${formatAmount(profile.defaultAbv)}% default and current ${formatAmount(profile.volumeOz)} oz pour.</div>
+    <div class="freeze-input"><label>Bottle ABV (%)<input id="alcoholAbvInput" type="number" min="1" max="100" step="0.1" inputmode="decimal" placeholder="${formatAmount(profile.defaultAbv)}" aria-label="Bottle ABV percentage"></label></div>
+    <div id="alcoholCalculatorResults" aria-live="polite"></div>
+  </section>`;
+}
+function updateAlcoholCalculator(profile){
+  const input=document.getElementById("alcoholAbvInput");
+  const results=document.getElementById("alcoholCalculatorResults");
+  if(!input||!results)return;
+  const entered=Number.parseFloat(input.value);
+  const bottleAbv=input.value.trim()===""?profile.defaultAbv:entered;
+  if(!Number.isFinite(bottleAbv)||bottleAbv<1||bottleAbv>100){
+    results.innerHTML='<p class="freeze-warning">Enter an ABV from 1% to 100%.</p>';
+    return;
+  }
+  const baselinePureAlcohol=profile.volumeOz*(profile.defaultAbv/100);
+  const uncappedTarget=baselinePureAlcohol/(bottleAbv/100);
+  const totalAbvMaximum=profile.batchOz*.16/(bottleAbv/100);
+  const hardSpiritMaximum=bottleAbv>=35?profile.batchOz*(4/24):Infinity;
+  const maximum=Math.min(profile.batchOz,totalAbvMaximum,hardSpiritMaximum);
+  const target=Math.min(uncappedTarget,maximum);
+  const drinkAbv=target*(bottleAbv/100)/profile.batchOz*100;
+  const adjustment=profile.volumeOz-target;
+  const capped=uncappedTarget>maximum+.049;
+  let adjustmentText="No mixer adjustment is needed; use the recipe as written.";
+  if(adjustment>.049)adjustmentText=`Add ${formatAmount(adjustment)} oz more nonalcoholic liquid to keep the batch at ${formatAmount(profile.batchOz)} oz.`;
+  if(adjustment<-.049)adjustmentText=`Remove ${formatAmount(Math.abs(adjustment))} oz of water or another nonalcoholic liquid to keep the batch at ${formatAmount(profile.batchOz)} oz.`;
+  const maxLabel=maximum>=profile.batchOz-.049?`${formatAmount(profile.batchOz)} oz by the alcohol rule; flavor balance is the practical limit`:`${formatAmount(maximum)} oz`;
+  results.innerHTML=`<div class="freeze-results">
+    <div class="freeze-result"><strong>Recommended ${escapeHtml(profile.name)}</strong>${formatAmount(target)} oz</div>
+    <div class="freeze-result"><strong>Ninja-based maximum</strong>${maxLabel}</div>
+    <div class="freeze-result"><strong>Estimated finished drink</strong>${formatAmount(drinkAbv)}% ABV</div>
+  </div>
+  <p class="freeze-adjustment">${adjustmentText}</p>
+  ${capped?`<p class="freeze-warning">The equivalent-strength target would be ${formatAmount(uncappedTarget)} oz, so the recommendation was capped at the Ninja-based maximum. Expect a slightly lower finished-drink ABV.</p>`:""}
+  <p class="alternative">This preserves the recipe's intended alcohol strength. The maximum also applies Ninja's 16% finished-drink ceiling and, at 35% bottle ABV or higher, the 4-oz-spirit-per-24-oz-recipe guideline. Very sweet mixers may still need additional unsweetened dilution.</p>`;
+}
 function openRecipe(r){
+  const alcoholProfile=alcoholProfileForRecipe(r);
   cat.textContent=labels[r.category];
   title.textContent=r.name;
   body.innerHTML=`
     <p><strong>Estimated yield:</strong> ${escapeHtml(r.yield||"8 servings (8 oz each)")} · <strong>Batch:</strong> ${escapeHtml(r.batch||"64 oz")}</p>
+    ${alcoholCalculatorHtml(alcoholProfile)}
     <div class="recipe-grid">
       <section><h4>Machine ingredients</h4><ul>${r.ingredients.map(x=>`<li>${escapeHtml(formatIngredientLine(x))}</li>`).join("")}</ul></section>
       <section><h4>Method</h4><ol>${r.steps.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ol></section>
@@ -644,6 +744,11 @@ function openRecipe(r){
       ${!r._custom&&recipeOverrides[r._index]?'<button type="button" class="restore-recipe">Restore Original</button>':""}
       ${r._custom?'<button type="button" class="delete-recipe">Delete Recipe</button>':""}
     </div>`;
+  if(alcoholProfile){
+    const abvInput=document.getElementById("alcoholAbvInput");
+    abvInput.addEventListener("input",()=>updateAlcoholCalculator(alcoholProfile));
+    updateAlcoholCalculator(alcoholProfile);
+  }
   body.querySelector(".edit-recipe").addEventListener("click",()=>openRecipeEditor(r._index));
   const restoreButton=body.querySelector(".restore-recipe");
   if(restoreButton)restoreButton.addEventListener("click",()=>{
