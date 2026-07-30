@@ -71,6 +71,9 @@
   .votes{background:#fff0ec;color:#a73f31}
   .ingredients{color:var(--muted);font-size:.92rem;line-height:1.45}
   .card button{margin-top:auto;width:100%;border-radius:13px;background:var(--deep);color:#fff}
+  .add-card{border:2px dashed rgba(8,127,140,.38);background:rgba(255,255,255,.72);justify-content:center;text-align:center}
+  .add-card .add-symbol{font-size:2.2rem;line-height:1;color:var(--ocean)}
+  .add-card button{background:var(--ocean)}
   .hidden{display:none!important}
   .overlay{
     position:fixed;inset:0;background:rgba(7,50,71,.62);display:flex;align-items:flex-start;
@@ -177,7 +180,7 @@
   </div>
 
   <section class="stats">
-    <div class="stat"><strong>21</strong><span>optimized recipes</span></div>
+    <div class="stat"><strong id="recipeCount">21</strong><span>available recipes</span></div>
     <div class="stat"><strong>Up to 64 oz</strong><span>recipe batch sizes</span></div>
   </section>
 
@@ -334,15 +337,29 @@ const defaultRecipes = [
 ];
 
 const RECIPE_STORAGE_KEY="vacationSlushiRecipeEditsV1";
+const CUSTOM_RECIPE_STORAGE_KEY="vacationSlushiCustomRecipesV1";
 let recipeOverrides={};
 try{recipeOverrides=JSON.parse(localStorage.getItem(RECIPE_STORAGE_KEY)||"{}")||{}}catch(e){recipeOverrides={}}
+let customRecipes=[];
+try{
+  const savedCustomRecipes=JSON.parse(localStorage.getItem(CUSTOM_RECIPE_STORAGE_KEY)||"[]");
+  if(Array.isArray(savedCustomRecipes))customRecipes=savedCustomRecipes.filter(r=>r&&Number.isInteger(r.id)&&r.name&&r.category);
+}catch(e){customRecipes=[]}
 let recipes=[];
 function refreshRecipes(){
-  recipes=defaultRecipes.map((r,index)=>({...r,...(recipeOverrides[index]||{}),_index:index}));
+  recipes=[
+    ...defaultRecipes.map((r,index)=>({...r,...(recipeOverrides[index]||{}),_index:index,_custom:false})),
+    ...customRecipes.map(r=>({...r,_index:r.id,_custom:true}))
+  ];
   document.getElementById("resetEditsBtn").disabled=Object.keys(recipeOverrides).length===0;
+  document.getElementById("recipeCount").textContent=recipes.length;
 }
 function persistRecipeOverrides(){
   localStorage.setItem(RECIPE_STORAGE_KEY,JSON.stringify(recipeOverrides));
+  refreshRecipes();
+}
+function persistCustomRecipes(){
+  localStorage.setItem(CUSTOM_RECIPE_STORAGE_KEY,JSON.stringify(customRecipes));
   refreshRecipes();
 }
 const GROCERY_SELECTION_KEY="vacationSlushiSelectedRecipesV1";
@@ -351,7 +368,7 @@ let selectedRecipeIndexes=new Set(defaultRecipes.map((_,index)=>index));
 let checkedGroceryItems={};
 try{
   const savedSelection=JSON.parse(localStorage.getItem(GROCERY_SELECTION_KEY)||"null");
-  if(Array.isArray(savedSelection))selectedRecipeIndexes=new Set(savedSelection.filter(index=>Number.isInteger(index)&&defaultRecipes[index]));
+  if(Array.isArray(savedSelection))selectedRecipeIndexes=new Set(savedSelection.filter(index=>Number.isInteger(index)&&(defaultRecipes[index]||customRecipes.some(r=>r.id===index))));
   checkedGroceryItems=JSON.parse(localStorage.getItem(GROCERY_CHECKS_KEY)||"{}")||{};
 }catch(e){checkedGroceryItems={}}
 function persistGroceryState(){
@@ -433,13 +450,13 @@ const activeFilter=()=>document.querySelector(".filter.active")?.dataset.filter|
 
 function render(filter="all"){
   grid.innerHTML="";
-  recipes.filter(r=>filter==="all"||r.category===filter).forEach((r,i)=>{
+  recipes.filter(r=>filter==="all"||r.category===filter).forEach(r=>{
     const card=document.createElement("article");
     card.className="card";
     card.innerHTML=`
       <div class="meta">
         <span class="pill">${labels[r.category]||escapeHtml(r.category)}</span>
-        <span class="pill votes">${r.votes} vote${r.votes===1?"":"s"}</span>
+        <span class="pill votes">${r._custom?"Custom":`${r.votes} vote${r.votes===1?"":"s"}`}</span>
       </div>
       <h3>${escapeHtml(r.name)}</h3>
       <div class="ingredients"><strong>Estimated yield:</strong> ${escapeHtml(r.yield||"8 servings (8 oz each)")}</div>
@@ -447,10 +464,22 @@ function render(filter="all"){
       <button type="button" data-index="${r._index}" aria-label="View recipe for ${escapeHtml(r.name)}">View Recipe</button>`;
     grid.appendChild(card);
   });
-  grid.querySelectorAll("button").forEach(btn=>btn.addEventListener("click",e=>{
+  const addCard=document.createElement("article");
+  addCard.className="card add-card";
+  addCard.innerHTML=`
+    <div class="add-symbol" aria-hidden="true">＋</div>
+    <h3>Add New Recipe</h3>
+    <div class="ingredients">Create a recipe and save it in this browser.</div>
+    <button type="button" class="add-recipe-button" data-category="${filter==="all"?"coffee":filter}">Add Recipe</button>`;
+  grid.appendChild(addCard);
+  grid.querySelectorAll("button[data-index]").forEach(btn=>btn.addEventListener("click",e=>{
     lastTrigger=e.currentTarget;
     openRecipe(recipes.find(r=>r._index===Number(btn.dataset.index)));
   }));
+  addCard.querySelector(".add-recipe-button").addEventListener("click",e=>{
+    lastTrigger=e.currentTarget;
+    openRecipeCreator(e.currentTarget.dataset.category);
+  });
 }
 function openSafeguards(){
   cat.textContent="🥷 Use the SLUSHi safely";
@@ -494,10 +523,11 @@ function openRecipe(r){
       <section><h4>Method</h4><ol>${r.steps.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ol></section>
     </div>
     ${r.toppings?.length?`<section><h4>Add only after dispensing</h4><ul>${r.toppings.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ul></section>`:""}
-    ${recipeOverrides[r._index]?'<div class="edit-warning">This recipe has saved browser edits. The grocery list is not recalculated automatically.</div>':""}
+    ${r._custom?'<div class="edit-warning"><strong>Custom recipe:</strong> Saved only in this browser. Its ingredient lines appear in the grocery planner for manual review.</div>':recipeOverrides[r._index]?'<div class="edit-warning">This recipe has saved browser edits. The grocery list is not recalculated automatically.</div>':""}
     <div class="modal-actions">
       <button type="button" class="primary edit-recipe">Edit Recipe</button>
-      ${recipeOverrides[r._index]?'<button type="button" class="restore-recipe">Restore Original</button>':""}
+      ${!r._custom&&recipeOverrides[r._index]?'<button type="button" class="restore-recipe">Restore Original</button>':""}
+      ${r._custom?'<button type="button" class="delete-recipe">Delete Recipe</button>':""}
     </div>`;
   body.querySelector(".edit-recipe").addEventListener("click",()=>openRecipeEditor(r._index));
   const restoreButton=body.querySelector(".restore-recipe");
@@ -507,6 +537,17 @@ function openRecipe(r){
     persistRecipeOverrides();
     render(activeFilter());
     openRecipe(recipes.find(item=>item._index===r._index));
+  });
+  const deleteButton=body.querySelector(".delete-recipe");
+  if(deleteButton)deleteButton.addEventListener("click",()=>{
+    if(!confirm(`Delete the custom recipe “${r.name}” from this browser?`))return;
+    customRecipes=customRecipes.filter(item=>item.id!==r._index);
+    selectedRecipeIndexes.delete(r._index);
+    clearGroceryChecksForRecipe(r._index);
+    persistCustomRecipes();
+    persistGroceryState();
+    render(activeFilter());
+    closeModal();
   });
   overlay.classList.remove("hidden");
   document.body.style.overflow="hidden";
@@ -530,12 +571,12 @@ function openRecipeEditor(index){
       <div class="wide modal-actions">
         <button type="submit" class="primary">Save Changes</button>
         <button type="button" id="cancelEdit">Cancel</button>
-        ${recipeOverrides[index]?'<button type="button" id="restoreFromEditor">Restore Original</button>':""}
+        ${!r._custom&&recipeOverrides[index]?'<button type="button" id="restoreFromEditor">Restore Original</button>':""}
       </div>
     </form>`;
   document.getElementById("recipeEditor").addEventListener("submit",event=>{
     event.preventDefault();
-    recipeOverrides[index]={
+    const updatedRecipe={
       name:document.getElementById("editName").value.trim(),
       category:document.getElementById("editCategory").value,
       yield:document.getElementById("editYield").value.trim(),
@@ -546,7 +587,15 @@ function openRecipeEditor(index){
       steps:document.getElementById("editSteps").value.split("\n").map(x=>x.trim()).filter(Boolean)
     };
     clearGroceryChecksForRecipe(index);
-    persistRecipeOverrides();
+    if(r._custom){
+      const customIndex=customRecipes.findIndex(item=>item.id===index);
+      if(customIndex<0)return;
+      customRecipes[customIndex]={...customRecipes[customIndex],...updatedRecipe};
+      persistCustomRecipes();
+    }else{
+      recipeOverrides[index]=updatedRecipe;
+      persistRecipeOverrides();
+    }
     render(activeFilter());
     openRecipe(recipes.find(item=>item._index===index));
   });
@@ -559,6 +608,53 @@ function openRecipeEditor(index){
     render(activeFilter());
     openRecipe(recipes.find(item=>item._index===index));
   });
+  document.getElementById("editName").focus();
+}
+function openRecipeCreator(defaultCategory="coffee"){
+  const category=labels[defaultCategory]?defaultCategory:"coffee";
+  cat.textContent="➕ Local recipe creator";
+  title.textContent="Add New Recipe";
+  body.innerHTML=`
+    <div class="edit-warning"><strong>Saved locally:</strong> This recipe will be stored only in this browser. Keep the liquid batch at or below the 64-ounce MAX FILL line. Its free-form ingredients will be added to the grocery planner as manual review lines.</div>
+    <form id="recipeEditor" class="editor-grid">
+      <label>Recipe name<input id="editName" required placeholder="Recipe name"></label>
+      <label>Category<select id="editCategory">${Object.keys(labels).map(value=>`<option value="${value}" ${category===value?"selected":""}>${labels[value]}</option>`).join("")}</select></label>
+      <label>Estimated yield<input id="editYield" value="8 servings (8 oz each)"></label>
+      <label>Batch size<input id="editBatch" value="64 oz"></label>
+      <label class="wide">Ingredient overlap<input id="editOverlap" placeholder="Ingredients shared with other recipes"></label>
+      <label class="wide">Ingredients — one per line<textarea id="editIngredients" required placeholder="Example: 32 oz chilled lemonade"></textarea></label>
+      <label class="wide">Toppings / solids — one per line, added only after dispensing<textarea id="editToppings" placeholder="Optional toppings"></textarea></label>
+      <label class="wide">Instructions — one step per line<textarea id="editSteps" required placeholder="Example: Whisk the chilled ingredients together."></textarea></label>
+      <div class="wide modal-actions">
+        <button type="submit" class="primary">Save Recipe</button>
+        <button type="button" id="cancelEdit">Cancel</button>
+      </div>
+    </form>`;
+  document.getElementById("recipeEditor").addEventListener("submit",event=>{
+    event.preventDefault();
+    let id=Date.now();
+    while(customRecipes.some(r=>r.id===id))id+=1;
+    customRecipes.push({
+      id,
+      name:document.getElementById("editName").value.trim(),
+      category:document.getElementById("editCategory").value,
+      votes:0,
+      yield:document.getElementById("editYield").value.trim(),
+      batch:document.getElementById("editBatch").value.trim(),
+      overlap:document.getElementById("editOverlap").value.trim()||"Custom recipe",
+      ingredients:document.getElementById("editIngredients").value.split("\n").map(x=>x.trim()).filter(Boolean),
+      toppings:document.getElementById("editToppings").value.split("\n").map(x=>x.trim()).filter(Boolean),
+      steps:document.getElementById("editSteps").value.split("\n").map(x=>x.trim()).filter(Boolean)
+    });
+    selectedRecipeIndexes.add(id);
+    persistCustomRecipes();
+    persistGroceryState();
+    render(activeFilter());
+    openRecipe(recipes.find(item=>item._index===id));
+  });
+  document.getElementById("cancelEdit").addEventListener("click",closeModal);
+  overlay.classList.remove("hidden");
+  document.body.style.overflow="hidden";
   document.getElementById("editName").focus();
 }
 const formatAmount=value=>Number.isInteger(value)?String(value):Number(value.toFixed(1)).toString();
@@ -574,14 +670,17 @@ function groceryMetrics(item,multiplier){
 }
 function renderGrocery(multiplier=1){
   const selectedRecipes=recipes.filter(r=>selectedRecipeIndexes.has(r._index));
+  const manualSelected=selectedRecipes.filter(r=>r._custom||recipeOverrides[r._index]);
   const relevantItems=groceryCatalog.filter(item=>requiredForItem(item,multiplier)>0);
   const checkedCount=relevantItems.filter(item=>checkedGroceryItems[`${multiplier}:${item.id}`]).length;
-  const summaryLines=relevantItems.map(item=>{
+  const structuredSummaryLines=relevantItems.map(item=>{
     const metrics=groceryMetrics(item,multiplier);
     const tag=item.category==="Optional presentation upgrades"?" [optional]":item.category==="Pantry items"?" [pantry]":"";
     const alternative=shortGroceryAlternative(item);
     return `${item.name}${tag} — ${metrics.packages} × ${metrics.option.packageLabel}${alternative?` (${alternative})`:""}`;
   });
+  const manualSummaryLines=manualSelected.flatMap(r=>r.ingredients.map(ingredient=>`${r.name}: ${ingredient} (manual entry${multiplier===2?"; double this amount":""})`));
+  const summaryLines=[...structuredSummaryLines,...manualSummaryLines];
   const eliminated=[
     "Separate half-and-half purchase",
     "Separate chocolate-drizzle product",
@@ -590,7 +689,6 @@ function renderGrocery(multiplier=1){
     ...(selectedRecipeIndexes.has(18)?["Bottled simple syrup when made at home"]:[]),
     ...(relevantItems.some(item=>item.id==="cold_brew")?["Bottled cold brew when the homemade option is selected"]:[])
   ];
-  const editedSelected=selectedRecipes.filter(r=>recipeOverrides[r._index]);
   cat.textContent="🛒 Selected-recipe shopping";
   title.textContent="Grocery Planner";
   body.innerHTML=`<p>Select recipes first. The catalog then rounds required amounts up to practical whole packages.</p>
@@ -605,7 +703,7 @@ function renderGrocery(multiplier=1){
       <button type="button" id="clearAllRecipes">Clear All</button>
       <button type="button" id="clearCheckedItems">Clear Checked Items</button>
     </div>
-    <div class="recipe-picker">${[...recipes].sort((a,b)=>b.votes-a.votes||a.name.localeCompare(b.name)).map(r=>`<label class="check-row recipe-choice"><input type="checkbox" class="recipe-selector" data-recipe-index="${r._index}" ${selectedRecipeIndexes.has(r._index)?"checked":""}><span>${escapeHtml(r.name)} · ${r.votes} vote${r.votes===1?"":"s"}</span></label>`).join("")}</div>
+    <div class="recipe-picker">${[...recipes].sort((a,b)=>b.votes-a.votes||a.name.localeCompare(b.name)).map(r=>`<label class="check-row recipe-choice"><input type="checkbox" class="recipe-selector" data-recipe-index="${r._index}" ${selectedRecipeIndexes.has(r._index)?"checked":""}><span>${escapeHtml(r.name)} · ${r._custom?"custom":`${r.votes} vote${r.votes===1?"":"s"}`}</span></label>`).join("")}</div>
     <section class="grocery-summary-card">
       <h3>Copy-ready grocery summary</h3>
       <p>Item and whole-package quantity, with an alternative in parentheses.</p>
@@ -615,7 +713,7 @@ function renderGrocery(multiplier=1){
     <div class="grocery-tools"><button type="button" id="printGrocery" class="primary">Print Grocery List</button></div>
     <div class="shopping-progress">${checkedCount} of ${relevantItems.length} grocery items checked off</div>
     <div class="note"><strong>Ingredients eliminated through substitutions:</strong> ${eliminated.map(escapeHtml).join("; ")||"None for the selected recipes."}</div>
-    ${editedSelected.length?`<div class="edit-warning"><strong>Edited recipes:</strong> ${editedSelected.map(r=>escapeHtml(r.name)).join(", ")}. The structured quantities use the default formulas. Review the edited ingredient lines shown at the end and adjust purchases as needed.</div>`:""}
+    ${manualSelected.length?`<div class="edit-warning"><strong>Custom or edited recipes:</strong> ${manualSelected.map(r=>escapeHtml(r.name)).join(", ")}. Structured quantities only use built-in formulas. Review the manual ingredient lines and adjust purchases as needed.</div>`:""}
     ${selectedRecipes.length?groceryCategories.map(category=>{
       const items=relevantItems.filter(item=>item.category===category);
       if(!items.length)return "";
@@ -628,7 +726,7 @@ function renderGrocery(multiplier=1){
           <div class="alternative"><strong>Alternative / note:</strong> ${escapeHtml(item.alternative)}</div></article>`;
       }).join("")}</section>`;
     }).join(""):'<div class="note">Select at least one recipe to build the grocery list.</div>'}
-    ${editedSelected.length?`<section class="grocery-category-card"><div class="grocery-category-head"><h3>Edited recipe ingredients to review</h3><span>Review manually</span></div>${editedSelected.map(r=>`<div class="grocery-recipe"><h3>${escapeHtml(r.name)}</h3>${r.ingredients.map((ingredient,index)=>{const key=`custom:${r._index}:${index}`;return `<label class="check-row"><input type="checkbox" class="grocery-item-check" data-check-key="${key}" ${checkedGroceryItems[key]?"checked":""}><span>${escapeHtml(ingredient)}</span></label>`}).join("")}</div>`).join("")}</section>`:""}
+    ${manualSelected.length?`<section class="grocery-category-card"><div class="grocery-category-head"><h3>Custom or edited recipe ingredients</h3><span>Review manually${multiplier===2?" · double amounts":""}</span></div>${manualSelected.map(r=>`<div class="grocery-recipe"><h3>${escapeHtml(r.name)}</h3>${r.ingredients.map((ingredient,index)=>{const key=`custom:${r._index}:${index}`;return `<label class="check-row"><input type="checkbox" class="grocery-item-check" data-check-key="${key}" ${checkedGroceryItems[key]?"checked":""}><span>${escapeHtml(ingredient)}${multiplier===2?" — double this amount":""}</span></label>`}).join("")}</div>`).join("")}</section>`:""}
     <div class="note"><strong>Package-size note:</strong> Container sizes vary by store, brand, and availability. Use the listed alternatives when an equivalent size is easier to find.</div>`;
   body.querySelectorAll(".grocery-multiplier").forEach(btn=>btn.addEventListener("click",()=>renderGrocery(Number(btn.dataset.multiplier))));
   body.querySelectorAll(".recipe-selector").forEach(box=>box.addEventListener("change",()=>{const index=Number(box.dataset.recipeIndex);if(box.checked)selectedRecipeIndexes.add(index);else selectedRecipeIndexes.delete(index);persistGroceryState();renderGrocery(multiplier)}));
